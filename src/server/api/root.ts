@@ -1,5 +1,7 @@
 import { postRouter } from "~/server/api/routers/post";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+import deepseekRouter from "./routers/deepseek";
+import ollamaRouter from "./routers/ollama";
 
 /**
  * This is the primary router for your server.
@@ -8,6 +10,8 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  */
 export const appRouter = createTRPCRouter({
   post: postRouter,
+  deepseek: deepseekRouter,
+  ollama: ollamaRouter
 });
 
 // export type definition of API
