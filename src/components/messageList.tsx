@@ -13,7 +13,7 @@ interface Message {
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`p-3 bg-[#202123] rounded-lg w-fit max-w-[80%] text-white ${
+            className={`p-3 bg-[#202123] rounded-lg w-fit max-w-[70%] text-white ${
               msg.sender === 'user' ? 'ml-auto' : 'mr-auto'
             }`}
           >

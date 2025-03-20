@@ -9,11 +9,13 @@ import { z } from 'zod';
 const callOllama = async (prompt: string) => {
   try {
     // Assuming Ollama server is running locally at 'http://localhost:PORT'
-    const response = await axios.post('http://localhost:11434/api/generate', {
-        "model": "llama3.2",  // Specify the model you're using
-        "prompt": prompt,  // Provide the entire conversation as context
-        "stream": false        // Specify whether to stream or not
-    }, {timeout: 10000});
+    const response = await axios.get('http://192.168.1.105:5000/query', {
+      params: {
+        q:prompt,
+      }
+    });
+
+    console.log(response.data)
     return response.data; // Return the response from Ollama
   } catch (error) {
     if (axios.isAxiosError(error)) {
