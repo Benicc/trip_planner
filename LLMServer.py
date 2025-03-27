@@ -13,28 +13,18 @@ api_url = "http://localhost:11434/api/generate"  # Ollama 3.2 API endpoint
 
 #add a dequeue
 
-# Initialize an empty conversation history
-conversation_history = ""
-
 def query_llama(input_text):
-    global conversation_history  # Use the global conversation history
-
-    # Append the new input to the conversation history
-    conversation_history += f"\nUser: {input_text}\n"
     
     # Sending a POST request to the Ollama API with the updated conversation history as the prompt
     response = requests.post(api_url, json={
         "model": "llama3.2",  # Specify the model you're using
-        "prompt": conversation_history,  # Provide the entire conversation as context
+        "prompt": input_text,  # Provide the entire conversation as context
         "stream": False        # Specify whether to stream or not
     }, timeout=180)
 
     # Check if response is successful and return the result
     if response.status_code == 200:
         bot_response = response.json().get("response", "No response received")
-        
-        # Append the bot's response to the conversation history
-        conversation_history += f"Bot: {bot_response}\n"
         
         return bot_response
     else:
@@ -59,6 +49,7 @@ def handle_query():
 if __name__ == '__main__':
     # Run the Flask app on all interfaces (0.0.0.0) and port 5000
     app.run(host='0.0.0.0', port=5000)
+    app.run(host='localhost', port=5000)
 
 
 

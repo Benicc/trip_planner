@@ -1,5 +1,5 @@
 interface Message {
-    sender: 'user' | 'other'; // Add a sender field
+    sender: 'user' | 'bot'; // Add a sender field
     content: string;           // Content of the message
   }
   

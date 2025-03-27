@@ -72,3 +72,12 @@ model VerificationToken {
 
     @@unique([identifier, token])
 }
+
+model Trip {
+  tripId      String @unique @default(uuid()) // Automatically generates a UUID
+  tripName    String @default("Untitled")
+  destination String
+  startDate   String
+  endDate     String
+  plans       Json   @default("[]")
+}
