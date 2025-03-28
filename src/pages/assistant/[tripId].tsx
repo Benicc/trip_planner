@@ -76,7 +76,7 @@ export default function Assistant() {
   
     return (
       <div className="w-screen h-screen bg-[#121212]">
-        <TripView tripId={String(tripId)} tripName=""/>
+        <TripView tripId={String(tripId)} tripName="" navType="Assistant"/>
         <div className="w-[100%] h-[70%]">
           <div className="flex justify-center h-[96%] overflow-auto">
             <div className="w-[70%] h-[50%]">

@@ -11,7 +11,6 @@ export const dbRouter = createTRPCRouter( {
                 destination: z.string(),
                 startDate: z.string(),
                 endDate: z.string(),
-                plans: z.array(z.object({}))
             })
         )
         .mutation(async ({input, ctx}) => {
@@ -41,5 +40,60 @@ export const dbRouter = createTRPCRouter( {
         // Return a list of baseIds
         return trips;
         }),
+    createPlan: publicProcedure
+        .input(
+            z.object({
+                tripId: z.string(),
+                planName: z.string(),
+                planType: z.string(),
+                date: z.string(),
+                colour: z.string(),
+                startTime: z.string(),
+                endTime: z.string(),
+                additional: z.record(z.any())
+            })
+        )
+        .mutation (async ({input, ctx}) => {
+            const {tripId, planName, planType, date, colour, startTime, endTime, additional} = input;
+
+            const newPlan = await ctx.db.plan.create({
+                data: {
+                  tripId,
+                  planId: String(uuidv4()),
+                  planName,
+                  planType,
+                  date,
+                  colour,
+                  startTime,
+                  endTime,
+                  additional,
+                },
+              });
+
+            return newPlan;
+        }),
+    getPlans: publicProcedure
+        .input(
+            z.string()
+        )
+        .query(async ({ctx, input}) => {
+            const plans = await ctx.db.plan.findMany({
+                where: {
+                    tripId: input,
+                },
+                select: {
+                    planId: true,
+                    planName: true,
+                    colour: true,
+                    planType: true,
+                    date: true,
+                    startTime: true,
+                    endTime: true,
+                    additional: true,
+                },
+            });
+
+            return plans
+        })
     
 })

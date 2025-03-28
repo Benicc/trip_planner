@@ -26,7 +26,6 @@ const TripPopup: React.FC<PopupProps> = ({ onClose }) => {
           destination,
           startDate,
           endDate,
-          plans: [],
         });
     
         onClose()
