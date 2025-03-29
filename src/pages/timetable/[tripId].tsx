@@ -9,7 +9,7 @@ export default function test() {
         <div className="min-w-[1200px] h-screen bg-[#121212]">
             <TripView tripId={String(tripId)} tripName={""} navType="Timetable"/>
             <div className="h-[60%]">
-            <Timetable/>
+                <Timetable/>
             </div>
         </div>
     );

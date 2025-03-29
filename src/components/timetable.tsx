@@ -5,35 +5,72 @@ import { useRouter } from "next/router";
 import { api } from "~/utils/api";
 import Details from "./details";
 import DeletePopup from "./deletePlan";
+import { assert } from "console";
+import EditPlanPopup from "./editPlan";
 
 
-const roundTime = (time: string, type:string): string => {
+function generateTimeArray(): string[] {
+  const times: string[] = [];
+  
+  // Loop through hours (0-23) and minutes (00, 15, 30, 45)
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute of [0, 15, 30, 45]) {
+      // Format the hour and minute to "HH:mm"
+      const formattedTime = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+      times.push(formattedTime);
+    }
+  }
+  
+  // Add 24:00 as the final time
+  times.push("24:00");
+
+  return times;
+}
+
+const roundToNearestQuarter = (time: string): string => {
+  const [hours, minutes] = time.split(":").map(Number);
+
+  // Calculate total minutes from midnight
+  const totalMinutes = hours! * 60 + minutes!;
+  
+  // Round total minutes to the nearest 15-minute interval
+  const roundedMinutes = Math.round(totalMinutes / 15) * 15;
+  
+  // Calculate the new rounded hour and minute
+  const roundedHours = Math.floor(roundedMinutes / 60);
+  const finalMinutes = roundedMinutes % 60;
+
+  // Return formatted time
+  return `${String(roundedHours).padStart(2, "0")}:${String(finalMinutes).padStart(2, "0")}`;
+};
+
+const roundTime = (time: string): string => {
   const [hours, minutes] = time.split(':').map(Number); // Split time into hours and minutes
 
   if (hours != undefined && minutes != undefined) {
     // Round the time based on the minutes (if minutes are 30 or more, round up to the next hour)
     let roundedHours = hours;
-    if (type == "end" && minutes >= 1) {
+    if (minutes >= 1) {
       roundedHours = (hours + 1) % 24; // Round up and handle 24:00 correctly
     }
 
     // Return the rounded time in HH:00 format
     return `${String(roundedHours).padStart(2, '0')}:00`;
   }
-  return "00:00"
+  return "00:00";
 };
 
 export default function Timetable() {
   const router = useRouter();
   const {tripId} = router.query;
   const [showPopup, setShowPopup] = useState(false);
+  const [showEditPopup, setShowEditPopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [details, setDetails] = useState({});
 
-  let times = ["00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00", "24:00"];
+  let times = generateTimeArray()
+  //["00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00", "24:00"];
 
-
-  console.log(roundTime("14:30", "end"))
   // State to track the current week's start date
   const [startDate, setStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
@@ -61,20 +98,20 @@ export default function Timetable() {
   const timeIndexMap = Object.fromEntries(times.map((time, index) => [time, index]));
 
   // Convert events into a lookup table for easier rendering
-  const eventMap: Record<string, { colour:string; planId: string; planName: string; span: number } | null> = {};
+  const eventMap: Record<string, { colour:string; planId: string; planName: string; span: number} | null> = {};
 
   const eventIndexMap: Record<string, number> = {};
 
   events?.forEach((event, index) => {
     const eventDay = event.date;
-    const startIdx = timeIndexMap[roundTime(event.startTime, "start")];
-    const endIdx = timeIndexMap[roundTime(event.endTime, "end")];
+    const startIdx = timeIndexMap[roundToNearestQuarter(event.startTime)];
+    const endIdx = timeIndexMap[roundToNearestQuarter(event.endTime)];
     eventIndexMap[event.planId] = index;
 
     if (startIdx !== undefined && endIdx !== undefined) {
       for (let i = startIdx; i < endIdx; i++) {
         const key = `${eventDay}-${times[i]}`;
-        eventMap[key] = i === startIdx ? { colour: event.colour, planId: event.planId, planName: event.planName, span: endIdx - startIdx } : null; // Only display planName on first row
+        eventMap[key] = i === startIdx ? { colour: event.colour, planId: event.planId, planName: event.planName, span: endIdx - startIdx} : null; // Only display planName on first row
       }
     }
   });
@@ -82,7 +119,7 @@ export default function Timetable() {
   console.log(eventIndexMap);
 
   return (
-    <div className="h-full min-w-[1200px] bg-[#121212] z-10">
+    <div className="h-full min-w-[1200px] bg-[#121212] z-20">
       <h2 className="text-xl font-bold mb-4 text-center text-white">Trip Timetable</h2>
 
       {/* Week Navigation */}
@@ -95,16 +132,16 @@ export default function Timetable() {
       </div>
 
       {/* Timetable */}
-      <div className="h-[90%] overflow-auto">
-        <div className="sticky top-0 bg-[#121212] flex w-full border justify-around">
+      <div className="sticky top-0 bg-[#121212] flex w-full border justify-around">
             <div className="px-4 py-2 text-white">Time / Date</div>
             {weekDays.map((day) => (
               <div key={day.toString()} className="px-4 py-2 text-white">
                 {format(day, "EEE, MMM d")}
               </div>
             ))}
-        </div>
-        <table className="w-full table-fixed min-w-max">
+      </div>
+      <div className="h-[80%] overflow-auto">
+        <table className="w-full table-fixed min-w-max border-collapse">
           {/* <thead className="h-[50%]">
             <tr>
               <th className="px-4 py-2 text-white border">Time / Date</th>
@@ -118,7 +155,7 @@ export default function Timetable() {
           <tbody>
             {times.map((time, timeIdx) => (
               <tr key={time}>
-                <td className="border px-4 py-2 text-white">{time}</td>
+                <td className="border px-4 py-[0.05px] text-white text-xs">{time}</td>
                 {weekDays.map((day) => {
                   const key = `${format(day, "yyyy-MM-dd")}-${time}`;
                   const event = eventMap[key];
@@ -128,12 +165,11 @@ export default function Timetable() {
                   return (
                     <td
                       key={key}
-                      className={`border px-4 py-2 text-center ${
-                        event ? `${event.colour} text-white font-bold` : ""
-                      }`}
+                      className="relative border border-neutral-500 px-4 py-[0.5px] text-center text-white font-bold"
                       rowSpan={event?.span || 1}
                     >
-                      <button 
+                      <div className="w-full h-full absolute top-0 left-0">
+                      { (event?.planName !== undefined) &&<button 
                           onClick={() => {
                             if (events !== undefined && event?.planId !== undefined) {
                               const index = eventIndexMap[event.planId];
@@ -146,8 +182,9 @@ export default function Timetable() {
                               setDetails({});
                             }
                           }}
-                        className="w-full h-full min-h-full">{event?.planName || ""}
-                      </button>
+                        className={`w-full h-full ${event?.colour}`}>{event?.planName}
+                      </button>}
+                      </div>
                     </td>
                   );
                 })}
@@ -162,13 +199,14 @@ export default function Timetable() {
           <button onClick={() => setShowPopup(!showPopup)} className="text-white w-[25%] h-12 bg-gray-800 rounded-xl">Create Plan</button>
           {Object.keys(details).length > 0 && (
             <div className="w-full space-x-4">
-              <button className="text-white w-[25%] h-12 bg-gray-800 rounded-xl">Edit Plan</button>
+              <button onClick={() => setShowEditPopup(!showEditPopup)} className="text-white w-[25%] h-12 bg-gray-800 rounded-xl">Edit Plan</button>
               <button onClick={() => setShowDeletePopup(!showDeletePopup)} className="text-white w-[25%] h-12 bg-red-500 rounded-xl">Delete Plan</button>
             </div>
           )}
         </div>
       </div>
       {showPopup && <PlanPopup onClose={() => setShowPopup(!showPopup)}/>}
+      {showEditPopup && <EditPlanPopup onClose={() => setShowEditPopup(!showEditPopup)} plan={details}/>}
       {showDeletePopup && <DeletePopup onClose={() => setShowDeletePopup(!showDeletePopup)} planId={(details as { planId?: string }).planId ?? ""} planName={(details as { planName?: string }).planName ?? ""}/>}
       
     </div>

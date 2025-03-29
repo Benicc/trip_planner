@@ -2,33 +2,40 @@ import React, { useState } from "react";
 import { api } from '~/utils/api';
 import { useRouter } from "next/router";
 
+interface Dictionary {
+    [key: string]: any;  // Key is a string, value can be any type
+  }
+
+
 interface PopupProps {
     onClose: () => void;
+    plan: Dictionary;
 }
 
-const PlanPopup: React.FC<PopupProps> = ({ onClose}) => {
+const EditPlanPopup: React.FC<PopupProps> = ({ onClose, plan }) => {
     const router = useRouter();
     const {tripId} = router.query;
 
     const colours = ["red", "blue", "green", "yellow", "black"];
 
-    const [planType, setPlanType] = useState("Activity");
-    const [planName, setPlanName] = useState("");
-    const [colour, setColour] = useState("bg-blue-500");
-    const [date, setDate] = useState("");
-    const [startTime, setStartTime] = useState("");
-    const [endTime, setEndTime] = useState("");
+    const [planType, setPlanType] = useState(plan.planType);
+    const [planName, setPlanName] = useState(plan.planName);
+    const [colour, setColour] = useState(plan.colour);
+    const [date, setDate] = useState(plan.date);
+    const [startTime, setStartTime] = useState(plan.startTime);
+    const [endTime, setEndTime] = useState(plan.endTime);
 
-    const createPlanMutation = api.database.createPlan.useMutation({
+    const updatePlanMutation = api.database.updatePlan.useMutation({
         onSuccess: newPlan => {
             console.log("success");
         },
         });
     
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-    const handleCreatePlan = async () => {
-        createPlanMutation.mutate({
+    const handleUpdatePlan = async () => {
+        updatePlanMutation.mutate({
             tripId: String(tripId),
+            planId: plan.planId,
             planType,
             planName,
             colour,
@@ -47,7 +54,7 @@ const PlanPopup: React.FC<PopupProps> = ({ onClose}) => {
     return (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
             <div className="flex flex-col justify-between bg-white p-8 rounded-lg shadow-lg space-y-4">
-                <h1 className="text-xl font-bold">New Plan</h1>
+                <h1 className="text-xl font-bold">Edit Plan</h1>
 
                 <div className="space-y-2">
                 <h3>Plan type:</h3>
@@ -162,11 +169,11 @@ const PlanPopup: React.FC<PopupProps> = ({ onClose}) => {
                 
                 <div className="flex justify-between items-center w-[400px]">
                     <button onClick={onClose} className="border border-2 px-4 py-2">Cancel</button>
-                    <button onClick={handleCreatePlan} className="border border-2 px-4 py-2">Create</button>
+                    <button onClick={handleUpdatePlan} className="border border-2 px-4 py-2">Update</button>
                 </div>
             </div>
         </div>
     );
 };
 
-export default PlanPopup;
+export default EditPlanPopup;

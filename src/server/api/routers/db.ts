@@ -122,5 +122,39 @@ export const dbRouter = createTRPCRouter( {
 
         return { message: "Plan deleted successfully" };
         }),
+        updatePlan: publicProcedure
+            .input(
+                z.object({
+                    tripId: z.string(),
+                    planId: z.string(),
+                    planName: z.string(),
+                    planType: z.string(),
+                    date: z.string(),
+                    colour: z.string(),
+                    startTime: z.string(),
+                    endTime: z.string(),
+                    additional: z.record(z.any())
+                })
+            )
+            .mutation (async ({input, ctx}) => {
+                const {tripId, planId, planName, planType, date, colour, startTime, endTime, additional} = input;
+
+                const updatePlan = await ctx.db.plan.update({
+                    where: {planId},
+                    data: {
+                        tripId,
+                        planId,
+                        planName,
+                        planType,
+                        date,
+                        colour,
+                        startTime,
+                        endTime,
+                        additional,
+                    },
+                });
+
+                return updatePlan;
+            }),
     
 })
