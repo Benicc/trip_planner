@@ -12,7 +12,7 @@ interface DetailsProps {
 const Details: React.FC<DetailsProps> = ({plan}) => {
 
     return (
-        <div className='flex space-x-[128px] bg-[#808080] h-[128px] rounded-xl p-4 overflow-auto'>
+        <div className='flex space-x-[128px] text-white bg-[#282828] h-[128px] w-[99%] ml-2 rounded-xl p-4 overflow-auto'>
             <div>
             Plan name: {plan.planName}
             <br></br>

@@ -94,6 +94,33 @@ export const dbRouter = createTRPCRouter( {
             });
 
             return plans
+        }),
+    deletePlan: publicProcedure
+        .input(
+        z.object({
+            planId: z.string(), // planId is required for deletion
         })
+        )
+        .mutation(async ({ input, ctx }) => {
+        const { planId } = input;
+
+        // Check if the plan exists and belongs to the current user
+        const existingPlan = await ctx.db.plan.findFirst({
+            where: {
+                planId,
+            },
+        });
+
+        if (!existingPlan) {
+            throw new Error("Plan not found or you do not have access.");
+        }
+
+        // Delete the plan from the database
+        await ctx.db.plan.delete({
+            where: { planId },
+        });
+
+        return { message: "Plan deleted successfully" };
+        }),
     
 })

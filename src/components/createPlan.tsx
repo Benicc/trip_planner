@@ -6,7 +6,7 @@ interface PopupProps {
     onClose: () => void;
 }
 
-const PlanPopup: React.FC<PopupProps> = ({ onClose }) => {
+const PlanPopup: React.FC<PopupProps> = ({ onClose}) => {
     const router = useRouter();
     const {tripId} = router.query;
 
@@ -24,7 +24,8 @@ const PlanPopup: React.FC<PopupProps> = ({ onClose }) => {
             console.log("success");
         },
         });
-
+    
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
     const handleCreateTrip = async () => {
         createPlanMutation.mutate({
             tripId: String(tripId),
@@ -38,6 +39,9 @@ const PlanPopup: React.FC<PopupProps> = ({ onClose }) => {
         });
     
         onClose()
+
+        await delay(2000);
+        window.location.reload();
     }
     
     return (
