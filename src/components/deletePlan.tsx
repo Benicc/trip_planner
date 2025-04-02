@@ -5,11 +5,12 @@ import { useRouter } from "next/router";
 
 interface PopupProps {
     onClose: () => void;
+    refetch: () => void;
     planId: string;
     planName: string;
 }
 
-const DeletePopup: React.FC<PopupProps> = ({ onClose, planId, planName}) => {
+const DeletePopup: React.FC<PopupProps> = ({ onClose, refetch, planId, planName}) => {
 
     const router = useRouter();
     const {tripId} = router.query;
@@ -26,13 +27,10 @@ const DeletePopup: React.FC<PopupProps> = ({ onClose, planId, planName}) => {
         },
       });
 
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
     const handleDelete = async () => {
         deletePlan({ planId });
         onClose();
-        
-        await delay(2000);
-        window.location.reload();
+        refetch();
     };
     
     return (

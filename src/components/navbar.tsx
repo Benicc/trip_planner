@@ -28,7 +28,7 @@ const TripView: React.FC<tripProps> = ({tripId, tripName, navType}) => {
     }, []);
     
     return (
-    <div className='z-50'>
+    <div className='z-50 w-48 p-2'>
         <div className="pl-[3%] pt-[2%] space-y-1">
             <div className='flex space-x-8 '>
                 <Link href={"/"}>

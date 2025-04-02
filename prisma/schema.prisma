@@ -79,6 +79,12 @@ model Trip {
   destination String
   startDate   String
   endDate     String
+  messages Json @default("[]")
+  backendMessages Json @default("[]")
+  events Json @default("[]")
+  historyString String @db.LongText
+  changed   Boolean @default(false)
+
   plans       Plan[]
 }
 

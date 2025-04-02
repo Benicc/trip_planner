@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { addDays, format, set, startOfWeek, subDays } from "date-fns";
 import PlanPopup from "./createPlan";
 import { useRouter } from "next/router";
@@ -7,7 +7,14 @@ import Details from "./details";
 import DeletePopup from "./deletePlan";
 import { assert } from "console";
 import EditPlanPopup from "./editPlan";
-import { JsonValue } from "@prisma/client/runtime/library";
+import { v4 as uuidv4 } from 'uuid';
+import ApplyChangesPopup from "./applyAssistant";
+
+
+
+interface PlansProps {
+    plans: any[];
+}
 
 
 function generateTimeArray(): string[] {
@@ -45,30 +52,13 @@ const roundToNearestQuarter = (time: string): string => {
   return `${String(roundedHours).padStart(2, "0")}:${String(finalMinutes).padStart(2, "0")}`;
 };
 
-const roundTime = (time: string): string => {
-  const [hours, minutes] = time.split(':').map(Number); // Split time into hours and minutes
-
-  if (hours != undefined && minutes != undefined) {
-    // Round the time based on the minutes (if minutes are 30 or more, round up to the next hour)
-    let roundedHours = hours;
-    if (minutes >= 1) {
-      roundedHours = (hours + 1) % 24; // Round up and handle 24:00 correctly
-    }
-
-    // Return the rounded time in HH:00 format
-    return `${String(roundedHours).padStart(2, '0')}:00`;
-  }
-  return "00:00";
-};
-
-export default function Timetable() {
+const AssistantTimetable: React.FC<PlansProps> = ({ plans }) => {
   const router = useRouter();
   const {tripId} = router.query;
   const [showPopup, setShowPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [details, setDetails] = useState({});
-  const [events, setEvents] = useState<{ date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, additional: JsonValue}[]>([]);
 
   let times = generateTimeArray()
   //["00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00", "24:00"];
@@ -81,27 +71,8 @@ export default function Timetable() {
     setStartDate((prev) => (direction === 1 ? addDays(prev, 7) : subDays(prev, 7)));
   };
 
-  // Example events with start and end times
-  const {data, isLoading, isError, error, refetch} = api.database.getPlans.useQuery(String(tripId));
 
-  useEffect(() => {
-    if (data && ! isLoading) {
-      setEvents(data);
-    }
-  }, [data]);
-
-  useEffect(() => {
-    const interval = setInterval(refetch, 10000); // Refetch every 10 seconds
-
-    return () => clearInterval(interval); // Cleanup on unmount
-  }, []);
-
-  // const events = [
-  //   { date: "2025-03-25", startTime: "09:00", endTime: "11:00", planName: "Math Class", colour:"bg-blue-500"},
-  //   { date: "2025-03-26", startTime: "10:00", endTime: "13:00", planName: "Science Lecture", colour:"bg-yellow-500" },
-  //   { date: "2025-03-27", startTime: "14:00", endTime: "19:00", planName: "History Seminar", colour:"bg-green-500" },
-  //   { date: "2025-03-29", startTime: "12:00", endTime: "14:00", planName: "Programming Workshop", colour:"bg-red-500"},
-  // ];
+  const events = plans;
 
   // Generate the week days dynamically
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
@@ -128,12 +99,10 @@ export default function Timetable() {
     }
   });
 
-  console.log(eventIndexMap);
+  console.log(events);
 
   return (
-    <div className="h-full min-w-[1200px] bg-[#121212] z-20">
-      <h2 className="text-xl font-bold mb-4 text-center text-white">Trip Timetable</h2>
-
+    <div className="h-full pt-2 w-full min-w-[800px] bg-[#121212] z-20">
       {/* Week Navigation */}
       <div className="flex justify-between items-center mb-4">
         <button onClick={() => changeWeek(-1)} className="px-3 py-2 bg-gray-300 rounded">← Previous Week</button>
@@ -152,7 +121,7 @@ export default function Timetable() {
               </div>
             ))}
       </div>
-      <div className="h-[80%] overflow-auto">
+      <div className="h-[55%] overflow-auto">
         <table className="w-full table-fixed min-w-max border-collapse">
           {/* <thead className="h-[50%]">
             <tr>
@@ -208,19 +177,12 @@ export default function Timetable() {
       <div className="pt-4 space-y-4">
         <Details plan={details}/>
         <div className="flex space-x-4 ml-2">
-          <button onClick={() => setShowPopup(!showPopup)} className="text-white w-[25%] h-12 bg-gray-800 rounded-xl">Create Plan</button>
-          {Object.keys(details).length > 0 && (
-            <div className="w-full space-x-4">
-              <button onClick={() => setShowEditPopup(!showEditPopup)} className="text-white w-[25%] h-12 bg-gray-800 rounded-xl">Edit Plan</button>
-              <button onClick={() => setShowDeletePopup(!showDeletePopup)} className="text-white w-[25%] h-12 bg-red-500 rounded-xl">Delete Plan</button>
-            </div>
-          )}
+          <button onClick={() => setShowPopup(!showPopup)} className="text-white w-[25%] h-12 bg-gray-800 rounded-xl">Apply Changes</button>
         </div>
       </div>
-      {showPopup && <PlanPopup onClose={() => setShowPopup(!showPopup)} refetch={refetch}/>}
-      {showEditPopup && <EditPlanPopup onClose={() => setShowEditPopup(!showEditPopup)} plan={details} refetch={refetch}/>}
-      {showDeletePopup && <DeletePopup onClose={() => setShowDeletePopup(!showDeletePopup)} planId={(details as { planId?: string }).planId ?? ""} planName={(details as { planName?: string }).planName ?? ""} refetch={refetch}/>}
-      
+      {showPopup && <ApplyChangesPopup onClose={() => setShowPopup(!showPopup)} plans={plans}/>}
     </div>
   );
 }
+
+export default AssistantTimetable;

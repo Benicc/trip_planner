@@ -4,9 +4,10 @@ import { useRouter } from "next/router";
 
 interface PopupProps {
     onClose: () => void;
+    refetch: () => void;
 }
 
-const PlanPopup: React.FC<PopupProps> = ({ onClose}) => {
+const PlanPopup: React.FC<PopupProps> = ({ onClose, refetch }) => {
     const router = useRouter();
     const {tripId} = router.query;
 
@@ -25,7 +26,6 @@ const PlanPopup: React.FC<PopupProps> = ({ onClose}) => {
         },
         });
     
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
     const handleCreatePlan = async () => {
         createPlanMutation.mutate({
             tripId: String(tripId),
@@ -39,9 +39,8 @@ const PlanPopup: React.FC<PopupProps> = ({ onClose}) => {
         });
     
         onClose()
+        refetch()
 
-        await delay(2000);
-        window.location.reload();
     }
     
     return (

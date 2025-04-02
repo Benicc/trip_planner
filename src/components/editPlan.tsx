@@ -9,10 +9,11 @@ interface Dictionary {
 
 interface PopupProps {
     onClose: () => void;
+    refetch: () => void;
     plan: Dictionary;
 }
 
-const EditPlanPopup: React.FC<PopupProps> = ({ onClose, plan }) => {
+const EditPlanPopup: React.FC<PopupProps> = ({ onClose, refetch, plan }) => {
     const router = useRouter();
     const {tripId} = router.query;
 
@@ -31,7 +32,6 @@ const EditPlanPopup: React.FC<PopupProps> = ({ onClose, plan }) => {
         },
         });
     
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
     const handleUpdatePlan = async () => {
         updatePlanMutation.mutate({
             tripId: String(tripId),
@@ -46,9 +46,7 @@ const EditPlanPopup: React.FC<PopupProps> = ({ onClose, plan }) => {
         });
     
         onClose()
-
-        await delay(2000);
-        window.location.reload();
+        refetch()
     }
     
     return (
