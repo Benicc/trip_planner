@@ -1,7 +1,7 @@
 import { signIn, signOut, useSession } from "next-auth/react";
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TripPopup from "~/components/createTrip";
 
 import { api } from "~/utils/api";
@@ -10,7 +10,13 @@ export default function Home() {
 
   const [showPopup, setShowPopup] = useState(false);
 
-  const { data: trips, isLoading, error } = api.database.getTrips.useQuery();
+  const { data: trips, isLoading, error, refetch} = api.database.getTrips.useQuery();
+
+  useEffect(() => {
+      const interval = setInterval(refetch, 10000); // Refetch every 10 seconds
+  
+      return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
 
   const togglePopup = () => {
     setShowPopup(!showPopup);

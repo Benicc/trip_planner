@@ -9,10 +9,8 @@ import { z } from 'zod';
 const callOllama = async (prompt: string) => {
   try {
     // Assuming Ollama server is running locally at 'http://localhost:PORT'
-    const response = await axios.get('http://127.0.0.1:5000/query', {
-      params: {
+    const response = await axios.post('http://192.168.1.105:5000/query', {    //http://127.0.0.1:5000/query
         q:prompt,
-      }
     });
 
     console.log(response.data)

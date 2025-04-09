@@ -194,7 +194,7 @@ export default function Timetable() {
                               setDetails({});
                             }
                           }}
-                        className={`w-full h-full ${event?.colour}`}>{event?.planName}
+                        className={`w-full h-full ${event?.colour}`}>{(event?.planName.length <= 50) ? (event?.planName) : (event?.planName.slice(0, 50) + "...")}
                       </button>}
                       </div>
                     </td>

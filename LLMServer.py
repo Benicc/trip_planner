@@ -14,10 +14,11 @@ api_url = "http://localhost:11434/api/generate"  # Ollama 3.2 API endpoint
 #add a dequeue
 
 def query_llama(input_text):
+    print(input_text)
     
     # Sending a POST request to the Ollama API with the updated conversation history as the prompt
     response = requests.post(api_url, json={
-        "model": "llama3.2",  # Specify the model you're using
+        "model": "llama3.2",  # Specify the model you're using "wizardlm2:7b" or "llama3.2"
         "prompt": input_text,  # Provide the entire conversation as context
         "stream": False        # Specify whether to stream or not
     }, timeout=180)
@@ -30,13 +31,14 @@ def query_llama(input_text):
     else:
         return f"Error {response.status_code}: {response.text}"
     
-@app.route('/query', methods=['GET'])
+@app.route('/query', methods=['POST'])
 def handle_query():
     """
     Handle GET requests to the /query endpoint.
     """
     # Get the query parameter from the request
-    query = request.args.get('q')
+    data = request.get_json()
+    query = data.get('q')
     if not query:
         return jsonify({"error": "Missing query parameter 'q'"}), 400
 

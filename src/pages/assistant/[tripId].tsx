@@ -158,40 +158,90 @@ export default function Assistant() {
         // if (recentMessages[i]?.sender == "bot") {
         //   newString += recentMessages[i]?.sender + ": " + recentMessages[i]?.content.slice(0, 100) + "..." + "\n"
         // } else {
+        // if (recentMessages[i]?.sender == "bot") {
+        //   newString += recentMessages[i]?.sender + ": " + JSON.parse(recentMessages[i]?.content || "{\"response\": \"error\"}").response + "\n"
+        // } else {
         newString += recentMessages[i]?.sender + ": " + recentMessages[i]?.content + "\n"
         // }
+        // // }
         
       } 
       newString += "user: " + e.target.value + "\n"
+      let prompt = ""
+      if (recentMessagesSize <= 1) {
+        prompt = `
+          You are a structured travel planner scheduler. Your task is to process user requests, answer user questions, extract event details, and update their schedule accordingly.
 
-      const prompt = `
-        You are a structured travel planner scheduler. Your task is to process user requests, answer user questions, extract event details, and update their schedule accordingly.
+          The year is currently 2025 and the conversation history with the user is shown:
 
-        The year is currently 2025 and the conversation history with the user is shown:
+          ${newString}
 
-        ${newString}
+          Here are the user's current scheduled plans:
+          
+          ${JSON.stringify(events)}
 
-        Your response must **only** be a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
-        {
-          "response": "Friendly response to the request.",
-          "plans": [{
-            "planId": "randomlyGeneratedString",
-            "planName": "eventName",
-            "planType": "type",
-            "colour": "bg-blue-500",
-            "date": "YYYY-MM-DD",
-            "startTime": "HH:mm",
-            "endTime": "HH:mm"
-          }]
-        }
+          Your response must **only** be a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
+          {
+            "response": "Friendly response to the request.",
+            "plans": [{
+              "planId": "randomlyGeneratedString",
+              "planName": "eventName",
+              "planType": "type",
+              "colour": "bg-blue-500",
+              "date": "YYYY-MM-DD",
+              "startTime": "HH:mm",
+              "endTime": "HH:mm"
+            }]
+          }
 
-        Rules
-        - Each event's fields (planId, planName, planType, colour, date, startTime, endTime) must be populated with the correct values.
-        - colour must be one of either bg-blue-500, bg-green-500, bg-yellow-500, bg-purple-500, bg-red-500.
-        - type must be one of either Activity, Flight, Accomodation, Restaurant.
-        - Use **24-hour format** for time.
-        - If any of the values are missing, respond with a request to clarify what's needed.
-      `;
+          Rules
+          - Each event's fields (planId, planName, planType, colour, date, startTime, endTime) must all be populated with values other than an empty string.
+          - You must **preserve all existing plans** from the current schedule, except for plans that the user has asked to change or remove.
+          - If a new plan is added, append it to the list.
+          - colour must be one of: bg-blue-500, bg-green-500, bg-yellow-500, bg-purple-500, bg-red-500.
+          - type must be one of: Activity, Flight, Accomodation, Restaurant.
+          - Use **24-hour format** for time.
+          - If any of the required fields are missing or ambiguous, respond with a message in \`response\` asking the user to clarify.
+        `;
+      } else {
+        prompt = `
+          You are a structured travel planner scheduler. Your task is to process user requests, answer their questions or prompts, extract event details, and update their schedule accordingly.
+
+          The year is currently 2025 and the conversation history with the user is shown. This includes previous plans and any user instructions:
+
+          ${newString}
+
+          Your response must be **only** a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
+          {
+            "response": "Friendly response to the request (max 200 words).",
+            "plans": [{
+              "planId": "randomlyGeneratedString",
+              "planName": "eventName",
+              "planType": "type",
+              "colour": "bg-blue-500",
+              "date": "YYYY-MM-DD",
+              "startTime": "HH:mm",
+              "endTime": "HH:mm"
+            }]
+          }
+
+          Rules
+          - Each event's fields (planId, planName, planType, colour, date, startTime, endTime) must all be populated with values other than an empty string.
+          - You must **preserve all existing plans exactly as they are**, unless the user has specifically requested a change or removal.
+          - If the user wants to:
+            - **Add** a new plan: include it in addition to all the previous ones.
+            - **Change** an existing plan: modify only the specific fields that were requested and keep all others intact.
+            - **Remove** a plan: only remove it if explicitly stated.
+          - Do **not** modify, merge, or delete any plans unless the user clearly requests it.
+          - Use these values:
+            - \`colour\`: one of bg-blue-500, bg-green-500, bg-yellow-500, bg-purple-500, bg-red-500
+            - \`planType\`: one of Activity, Flight, Accommodation, Restaurant
+          - Use **24-hour format** for all times.
+          - If any information is missing or unclear, respond with a clarification request in the \`response\` field and return the plans list unchanged.
+
+          You must return the complete updated list of all plans (new, changed, and unchanged) inside the \`plans\` array.
+        `;
+      }
       
 
       setHistoryString(prompt);

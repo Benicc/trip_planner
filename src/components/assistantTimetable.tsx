@@ -105,29 +105,29 @@ const AssistantTimetable: React.FC<PlansProps> = ({ plans }) => {
     <div className="h-full pt-2 w-full min-w-[800px] bg-[#121212] z-20">
       {/* Week Navigation */}
       <div className="flex justify-between items-center mb-4">
-        <button onClick={() => changeWeek(-1)} className="px-3 py-2 bg-gray-300 rounded">← Previous Week</button>
+        <button onClick={() => changeWeek(-1)} className="px-4 py-2 bg-gray-300 rounded">← Previous Week</button>
         <h3 className="text-lg font-semibold text-white">
           {format(startDate, "MMMM d, yyyy")} - {format(addDays(startDate, 6), "MMMM d, yyyy")}
         </h3>
-        <button onClick={() => changeWeek(1)} className="px-3 py-2 bg-gray-300 rounded">Next Week →</button>
+        <button onClick={() => changeWeek(1)} className="px-4 py-2 bg-gray-300 rounded">Next Week →</button>
       </div>
 
       {/* Timetable */}
-      <div className="sticky top-0 bg-[#121212] flex w-full border justify-around">
-            <div className="px-4 py-2 text-white">Time / Date</div>
+      <div className="sticky top-0 bg-[#121212] flex w-full border justify-between">
+            <div className="px-4 py-2 text-white text-sm">Time / Date</div>
             {weekDays.map((day) => (
-              <div key={day.toString()} className="px-4 py-2 text-white">
+              <div key={day.toString()} className="px-4 py-2 text-white text-sm">
                 {format(day, "EEE, MMM d")}
               </div>
             ))}
       </div>
       <div className="h-[55%] overflow-auto">
-        <table className="w-full table-fixed min-w-max border-collapse">
+        <table className="w-full min-w-max border-collapse table-fixed">
           {/* <thead className="h-[50%]">
-            <tr>
-              <th className="px-4 py-2 text-white border">Time / Date</th>
+            <tr className="fixed">
+              <th className="sticky px-3 py-2 text-white border">Time / Date</th>
               {weekDays.map((day) => (
-                <th key={day.toString()} className="border px-4 py-2 text-white">
+                <th key={day.toString()} className="border px-3 py-2 text-white">
                   {format(day, "EEE, MMM d")}
                 </th>
               ))}
@@ -150,7 +150,7 @@ const AssistantTimetable: React.FC<PlansProps> = ({ plans }) => {
                       rowSpan={event?.span || 1}
                     >
                       <div className="w-full h-full absolute top-0 left-0">
-                      { (event?.planName !== undefined) &&<button 
+                      { (event?.planName !== undefined) && <button 
                           onClick={() => {
                             if (events !== undefined && event?.planId !== undefined) {
                               const index = eventIndexMap[event.planId];
@@ -163,7 +163,7 @@ const AssistantTimetable: React.FC<PlansProps> = ({ plans }) => {
                               setDetails({});
                             }
                           }}
-                        className={`w-full h-full ${event?.colour}`}>{event?.planName}
+                        className={`w-full h-full text-xs ${event?.colour}`}>{(event?.planName.length <= 20) ? (event?.planName) : (event?.planName.slice(0, 20) + "...")}
                       </button>}
                       </div>
                     </td>
