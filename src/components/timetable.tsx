@@ -104,7 +104,7 @@ export default function Timetable() {
   useEffect(() => {
     const interval = setInterval(updateProd, 60000); // update productivity every 60 seconds
 
-    return () => clearInterval(interval); // Cleanup on unmount
+    return () => {clearInterval(interval); setActionsCount(0)} // Cleanup on unmount
   }, []);
   
   
@@ -124,7 +124,7 @@ export default function Timetable() {
   const {data, isLoading, isError, error, refetch} = api.database.getPlans.useQuery(String(tripId));
 
   useEffect(() => {
-    if (data && ! isLoading) {
+    if (data && !isLoading) {
       setEvents(data);
     }
   }, [data]);
@@ -132,7 +132,7 @@ export default function Timetable() {
   useEffect(() => {
     const interval = setInterval(refetch, 10000); // Refetch every 10 seconds
 
-    return () => {clearInterval(interval); setActionsCount(0)} // Cleanup on unmount
+    return () => clearInterval(interval) // Cleanup on unmount
   }, []);
 
   // const events = [

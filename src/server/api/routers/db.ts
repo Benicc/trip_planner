@@ -32,7 +32,6 @@ export const dbRouter = createTRPCRouter( {
               });
 
             return newTrip;
-
         }),
     createProd: publicProcedure
         .input(
