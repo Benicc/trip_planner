@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `plan` ADD COLUMN `notes` LONGTEXT NOT NULL DEFAULT '';

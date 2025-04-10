@@ -72,7 +72,7 @@ const AssistantTimetable: React.FC<PlansProps> = ({ plans }) => {
   };
 
 
-  const events = plans;
+  let events = plans;
 
   // Generate the week days dynamically
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
@@ -89,6 +89,7 @@ const AssistantTimetable: React.FC<PlansProps> = ({ plans }) => {
     const eventDay = event.date;
     const startIdx = timeIndexMap[roundToNearestQuarter(event.startTime)];
     const endIdx = timeIndexMap[roundToNearestQuarter(event.endTime)];
+    event.planId = uuidv4();
     eventIndexMap[event.planId] = index;
 
     if (startIdx !== undefined && endIdx !== undefined) {

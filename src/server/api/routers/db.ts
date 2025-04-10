@@ -100,11 +100,12 @@ export const dbRouter = createTRPCRouter( {
                 colour: z.string(),
                 startTime: z.string(),
                 endTime: z.string(),
+                notes: z.string(),
                 additional: z.record(z.any())
             })
         )
         .mutation (async ({input, ctx}) => {
-            const {tripId, planName, planType, date, colour, startTime, endTime, additional} = input;
+            const {tripId, planName, planType, date, colour, startTime, endTime, notes, additional} = input;
 
             const newPlan = await ctx.db.plan.create({
                 data: {
@@ -116,6 +117,7 @@ export const dbRouter = createTRPCRouter( {
                   colour,
                   startTime,
                   endTime,
+                  notes,
                   additional,
                 },
               });
@@ -134,6 +136,7 @@ export const dbRouter = createTRPCRouter( {
                         colour: z.string(),
                         startTime: z.string(),
                         endTime: z.string(),
+                        notes: z.string()
                     })
                 )
             })
@@ -171,6 +174,7 @@ export const dbRouter = createTRPCRouter( {
                     colour: plan.colour,
                     startTime: plan.startTime,
                     endTime: plan.endTime,
+                    notes: plan.notes,
                     additional: {},
 
                 })),
@@ -195,6 +199,7 @@ export const dbRouter = createTRPCRouter( {
                     date: true,
                     startTime: true,
                     endTime: true,
+                    notes: true,
                     additional: true,
                 },
             });
@@ -254,11 +259,12 @@ export const dbRouter = createTRPCRouter( {
                 colour: z.string(),
                 startTime: z.string(),
                 endTime: z.string(),
+                notes: z.string(),
                 additional: z.record(z.any())
             })
         )
         .mutation (async ({input, ctx}) => {
-            const {tripId, planId, planName, planType, date, colour, startTime, endTime, additional} = input;
+            const {tripId, planId, planName, planType, date, colour, startTime, endTime, notes, additional} = input;
 
             const updatePlan = await ctx.db.plan.update({
                 where: {planId},
@@ -271,6 +277,7 @@ export const dbRouter = createTRPCRouter( {
                     colour,
                     startTime,
                     endTime,
+                    notes,
                     additional,
                 },
             });

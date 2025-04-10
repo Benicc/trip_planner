@@ -19,6 +19,7 @@ const PlanPopup: React.FC<PopupProps> = ({ onClose, refetch }) => {
     const [date, setDate] = useState("");
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
+    const [notes, setNotes] = useState("");
 
     const createPlanMutation = api.database.createPlan.useMutation({
         onSuccess: newPlan => {
@@ -35,6 +36,7 @@ const PlanPopup: React.FC<PopupProps> = ({ onClose, refetch }) => {
             date,
             startTime,
             endTime,
+            notes,
             additional: {},
         });
     
@@ -153,6 +155,16 @@ const PlanPopup: React.FC<PopupProps> = ({ onClose, refetch }) => {
                     placeholder="Enter plan name"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
+                    />
+                </div>
+
+                <div>
+                    <h3>Notes:</h3>
+                    <textarea 
+                    className="border border-gray-300 rounded-md p-2 w-full" 
+                    placeholder="Add any additional notes here"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
                     />
                 </div>
 

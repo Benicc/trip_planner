@@ -97,6 +97,7 @@ model Plan {
     date    String
     startTime String
     endTime String
+    notes String @db.LongText
     additional Json @default("{}")
 
     Trip Trip @relation(fields: [tripId], references: [tripId], onDelete: Cascade)

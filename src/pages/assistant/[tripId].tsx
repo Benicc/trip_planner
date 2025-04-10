@@ -25,7 +25,7 @@ export default function Assistant() {
 
     const [messages, setMessages] = useState<{ sender: 'user' | 'bot'; content: string }[]>([]); //
     const [backendMessages, setBackendMessages] = useState<{ sender: 'user' | 'bot'; content: string }[]>([]); //
-    const [events, setEvents] = useState<{ date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string}[]>([]);
+    const [events, setEvents] = useState<{ date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, notes: string}[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [historyString, setHistoryString] = useState(""); //
     const [changed, setChanged] = useState(false)
@@ -61,7 +61,7 @@ export default function Assistant() {
         const assistantMessages = assistantData.data?.messages as { sender: 'user' | 'bot'; content: string }[] || []
         const assistantBackend =assistantData.data?.backendMessages as { sender: 'user' | 'bot'; content: string }[] || []
         const assistantHistory = assistantData.data?.historyString || ""
-        const assistantEvents = assistantData.data?.events as { date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string}[] || []
+        const assistantEvents = assistantData.data?.events as { date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, notes: string}[] || []
         const assistantChanged = assistantData.data?.changed || false;
         setMessages(assistantMessages);
         setBackendMessages(assistantBackend);
@@ -70,7 +70,7 @@ export default function Assistant() {
         setChanged(assistantChanged);
 
         if (!assistantChanged) {
-          const timetable = timetableData.data as { date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string}[];
+          const timetable = timetableData.data as { date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, notes: string}[];
           updateAssistant.mutate({
             tripId: String(tripId),
             messages,
@@ -184,13 +184,13 @@ export default function Assistant() {
           {
             "response": "Friendly response to the request.",
             "plans": [{
-              "planId": "randomlyGeneratedString",
               "planName": "eventName",
               "planType": "type",
               "colour": "bg-blue-500",
               "date": "YYYY-MM-DD",
               "startTime": "HH:mm",
-              "endTime": "HH:mm"
+              "endTime": "HH:mm",
+              "notes": "eventDescription",
             }]
           }
 
@@ -215,18 +215,18 @@ export default function Assistant() {
           {
             "response": "Friendly response to the request (max 200 words).",
             "plans": [{
-              "planId": "randomlyGeneratedString",
               "planName": "eventName",
               "planType": "type",
               "colour": "bg-blue-500",
               "date": "YYYY-MM-DD",
               "startTime": "HH:mm",
-              "endTime": "HH:mm"
+              "endTime": "HH:mm",
+              "notes": "eventDescription",
             }]
           }
 
           Rules
-          - Each event's fields (planId, planName, planType, colour, date, startTime, endTime) must all be populated with values other than an empty string.
+          - Each event's fields (planName, planType, colour, date, startTime, endTime) must all be populated with values other than an empty string.
           - You must **preserve all existing plans exactly as they are**, unless the user has specifically requested a change or removal.
           - If the user wants to:
             - **Add** a new plan: include it in addition to all the previous ones.
@@ -273,6 +273,9 @@ export default function Assistant() {
       setHistoryString("");
       setEvents([]);
       setChanged(false);
+
+      timetableData.refetch()
+      assistantData.refetch()
 
       await delay(2000);
       window.location.reload();
