@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { v4 as uuidv4 } from 'uuid';
+import TripPopup from "~/components/createTrip";
 
 
 export const dbRouter = createTRPCRouter( {
     createTrip: publicProcedure
         .input(
             z.object({
+                tripId: z.string(),
                 tripName: z.string(),
                 destination: z.string(),
                 startDate: z.string(),
@@ -14,11 +16,11 @@ export const dbRouter = createTRPCRouter( {
             })
         )
         .mutation(async ({input, ctx}) => {
-            const {tripName, destination, startDate, endDate} = input;
+            const {tripId, tripName, destination, startDate, endDate} = input;
 
             const newTrip = await ctx.db.trip.create({
                 data: {
-                  tripId: String(uuidv4()),
+                  tripId,
                   tripName,
                   destination,
                   startDate,
@@ -32,6 +34,87 @@ export const dbRouter = createTRPCRouter( {
             return newTrip;
 
         }),
+    createProd: publicProcedure
+        .input(
+            z.object({
+                tripId: z.string(),
+            })
+        )
+        .mutation(async ({input, ctx}) => {
+            const {tripId} = input;
+
+            const newProductivity = await ctx.db.productivity.create({
+                data: {
+                    tripId: tripId,
+                    prodId: String(uuidv4()),
+                    AIactions: [],
+                    GUIactions: [],
+                },
+            });
+
+            return newProductivity;
+        }),
+    updateProd: publicProcedure
+        .input(
+            z.object({
+                tripId: z.string(),
+                AIactions: z.any(),
+                GUIactions: z.any(),
+            })
+        )
+        .mutation(async ({input, ctx}) => {
+            const {tripId, AIactions, GUIactions} = input;
+
+            const updatedProductivity = await ctx.db.productivity.update({
+                where: {
+                    tripId,
+                },
+                data: {
+                    AIactions,
+                    GUIactions,
+                },
+            });
+
+            return updatedProductivity;
+        }),
+    getAIProd: publicProcedure
+        .input(
+            z.string()
+        )
+        .query(async ({input, ctx}) => {
+            const tripId = input;
+
+            const productivity = await ctx.db.productivity.findUnique({
+                where: {
+                    tripId,
+                },
+                select: {
+                    AIactions: true,
+                },
+            });
+
+            return productivity;
+        }
+    ),
+    getGUIProd: publicProcedure
+        .input(
+            z.string()
+        )
+        .query(async ({input, ctx}) => {
+            const tripId = input;
+
+            const productivity = await ctx.db.productivity.findUnique({
+                where: {
+                    tripId,
+                },
+                select: {
+                    GUIactions: true,
+                },
+            });
+
+            return productivity;
+        }
+    ),
     saveAssistant: publicProcedure
         .input(
             z.object({

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { api } from '~/utils/api';
+import { v4 as uuidv4 } from 'uuid';
 
 interface PopupProps {
   onClose: () => void;
@@ -20,13 +21,24 @@ const TripPopup: React.FC<PopupProps> = ({ onClose }) => {
         },
       });
 
+    const createProdMutation = api.database.createProd.useMutation({
+        onSuccess: newProd => {
+          console.log("success");
+        },
+      });
+
     const handleCreateTrip = async () => {
+        const tripId = String(uuidv4());
         createTripMutation.mutate({
+          tripId,
           tripName,
           destination,
           startDate,
           endDate,
         });
+
+        createProdMutation.mutate({tripId});
+
     
         onClose()
     }

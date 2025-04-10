@@ -10,10 +10,11 @@ interface Dictionary {
 interface PopupProps {
     onClose: () => void;
     refetch: () => void;
+    action: () => void;
     plan: Dictionary;
 }
 
-const EditPlanPopup: React.FC<PopupProps> = ({ onClose, refetch, plan }) => {
+const EditPlanPopup: React.FC<PopupProps> = ({ onClose, refetch, action, plan }) => {
     const router = useRouter();
     const {tripId} = router.query;
 
@@ -30,6 +31,7 @@ const EditPlanPopup: React.FC<PopupProps> = ({ onClose, refetch, plan }) => {
     const updatePlanMutation = api.database.updatePlan.useMutation({
         onSuccess: newPlan => {
             console.log("success");
+            action();
         },
         });
     

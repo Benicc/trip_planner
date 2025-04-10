@@ -14,11 +14,10 @@ api_url = "http://localhost:11434/api/generate"  # Ollama 3.2 API endpoint
 #add a dequeue
 
 def query_llama(input_text):
-    print(input_text)
     
     # Sending a POST request to the Ollama API with the updated conversation history as the prompt
     response = requests.post(api_url, json={
-        "model": "llama3.2",  # Specify the model you're using "wizardlm2:7b" or "llama3.2"
+        "model": "llama3.2",  # Specify the model you're using "llama3.2"
         "prompt": input_text,  # Provide the entire conversation as context
         "stream": False        # Specify whether to stream or not
     }, timeout=180)
@@ -51,7 +50,7 @@ def handle_query():
 if __name__ == '__main__':
     # Run the Flask app on all interfaces (0.0.0.0) and port 5000
     app.run(host='0.0.0.0', port=5000)
-    app.run(host='localhost', port=5000)
+
 
 
 

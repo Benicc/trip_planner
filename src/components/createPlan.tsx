@@ -5,9 +5,10 @@ import { useRouter } from "next/router";
 interface PopupProps {
     onClose: () => void;
     refetch: () => void;
+    action: () => void;
 }
 
-const PlanPopup: React.FC<PopupProps> = ({ onClose, refetch }) => {
+const PlanPopup: React.FC<PopupProps> = ({ onClose, refetch, action}) => {
     const router = useRouter();
     const {tripId} = router.query;
 
@@ -24,6 +25,7 @@ const PlanPopup: React.FC<PopupProps> = ({ onClose, refetch }) => {
     const createPlanMutation = api.database.createPlan.useMutation({
         onSuccess: newPlan => {
             console.log("success");
+            action();
         },
         });
     

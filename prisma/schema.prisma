@@ -73,6 +73,13 @@ model VerificationToken {
     @@unique([identifier, token])
 }
 
+model Productivity {
+    tripId String
+    prodId String @unique @default(uuid())
+    AIactions Json @default("[]")
+    GUIactions Json @default("[]")
+}
+
 model Trip {
   tripId      String @unique @default(uuid()) // Automatically generates a UUID
   tripName    String @default("Untitled")

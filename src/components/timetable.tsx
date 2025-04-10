@@ -69,7 +69,46 @@ export default function Timetable() {
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [details, setDetails] = useState({});
   const [events, setEvents] = useState<{ date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, additional: JsonValue}[]>([]);
+  const [actionsCount, setActionsCount] = useState(0);
+  const [AIactions, setAIactions] = useState<{dateTime: string, actions: number}[]>([]);
+  const [GUIactions, setGUIactions] = useState<{dateTime: string, actions: number}[]>([]);
+  
+  //update productivity
+  const updateProdMutation = api.database.updateProd.useMutation({
+      onSuccess: newProd => {
+          console.log("success");
+      },
+      });
 
+  const getProd = api.database.getGUIProd.useQuery(String(tripId));
+
+  useEffect(() => {
+    if (getProd.isSuccess && getProd.data !== undefined) {
+      // setAIactions(getProd.data?.AIactions as {dateTime: string, actions: number}[]);
+      setGUIactions(getProd.data?.GUIactions as {dateTime: string, actions: number}[]);
+    }
+  }, [getProd.isSuccess, getProd.data]);
+
+  const updateProd = () => {
+    const currentTime = new Date();
+    const formattedTime = format(currentTime, "yyyy-MM-dd HH:mm:ss");
+    
+    if (!getProd.isFetching && !getProd.isLoading && actionsCount > 0) {
+      updateProdMutation.mutate({
+        tripId: String(tripId),
+        AIactions: [...GUIactions, ...[{dateTime: formattedTime, actions: actionsCount}]],
+      });
+    }
+  }
+
+  useEffect(() => {
+    const interval = setInterval(updateProd, 60000); // update productivity every 60 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
+  
+  
+  
   let times = generateTimeArray()
   //["00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00", "24:00"];
 
@@ -93,7 +132,7 @@ export default function Timetable() {
   useEffect(() => {
     const interval = setInterval(refetch, 10000); // Refetch every 10 seconds
 
-    return () => clearInterval(interval); // Cleanup on unmount
+    return () => {clearInterval(interval); setActionsCount(0)} // Cleanup on unmount
   }, []);
 
   // const events = [
@@ -217,9 +256,20 @@ export default function Timetable() {
           )}
         </div>
       </div>
-      {showPopup && <PlanPopup onClose={() => setShowPopup(!showPopup)} refetch={refetch}/>}
-      {showEditPopup && <EditPlanPopup onClose={() => setShowEditPopup(!showEditPopup)} plan={details} refetch={refetch}/>}
-      {showDeletePopup && <DeletePopup onClose={() => setShowDeletePopup(!showDeletePopup)} planId={(details as { planId?: string }).planId ?? ""} planName={(details as { planName?: string }).planName ?? ""} refetch={refetch}/>}
+      {showPopup && <PlanPopup 
+        onClose={() => setShowPopup(!showPopup)} 
+        refetch={refetch} 
+        action={() => setActionsCount(actionsCount + 1)}/>}
+      {showEditPopup && <EditPlanPopup 
+        onClose={() => setShowEditPopup(!showEditPopup)} plan={details} 
+        refetch={refetch} 
+        action={() => setActionsCount(actionsCount + 1)}/>}
+      {showDeletePopup && <DeletePopup 
+        onClose={() => setShowDeletePopup(!showDeletePopup)} 
+        planId={(details as { planId?: string }).planId ?? ""} 
+        planName={(details as { planName?: string }).planName ?? ""} 
+        refetch={refetch}
+        action={() => setActionsCount(actionsCount + 1)}/>}
       
     </div>
   );

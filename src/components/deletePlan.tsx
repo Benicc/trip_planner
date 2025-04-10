@@ -6,11 +6,12 @@ import { useRouter } from "next/router";
 interface PopupProps {
     onClose: () => void;
     refetch: () => void;
+    action: () => void;
     planId: string;
     planName: string;
 }
 
-const DeletePopup: React.FC<PopupProps> = ({ onClose, refetch, planId, planName}) => {
+const DeletePopup: React.FC<PopupProps> = ({ onClose, refetch, action, planId, planName}) => {
 
     const router = useRouter();
     const {tripId} = router.query;
@@ -19,6 +20,7 @@ const DeletePopup: React.FC<PopupProps> = ({ onClose, refetch, planId, planName}
     const { mutate: deletePlan,  isError, isSuccess,} = api.database.deletePlan.useMutation({
         onSuccess: () => {
           // Redirect to another page after deletion (e.g., the home page)
+          action();
           router.push(`/timetable/${tripId}`); // Replace with the path you want to redirect to
         },
         onError: (err) => {
