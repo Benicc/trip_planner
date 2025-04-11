@@ -74,11 +74,23 @@ export default function Timetable() {
   const [GUIactions, setGUIactions] = useState<{dateTime: string, actions: number}[]>([]);
   
   //update productivity
+
+  const incrementActionMutation = api.action.increment.useMutation(
+      {
+        onSuccess: () => {
+          console.log("Incremended action count");
+        },
+      }
+    );
+
+  const action = () => {incrementActionMutation.mutate({tripId: String(tripId), type: "GUI"})};
   const updateProdMutation = api.database.updateProd.useMutation({
       onSuccess: newProd => {
           console.log("success");
       },
       });
+
+  ////////////////////////////////////////////////////////
 
   const getProd = api.database.getGUIProd.useQuery(String(tripId));
 
@@ -259,17 +271,17 @@ export default function Timetable() {
       {showPopup && <PlanPopup 
         onClose={() => setShowPopup(!showPopup)} 
         refetch={refetch} 
-        action={() => setActionsCount(actionsCount + 1)}/>}
+        action={action}/>}
       {showEditPopup && <EditPlanPopup 
         onClose={() => setShowEditPopup(!showEditPopup)} plan={details} 
         refetch={refetch} 
-        action={() => setActionsCount(actionsCount + 1)}/>}
+        action={action}/>}
       {showDeletePopup && <DeletePopup 
         onClose={() => setShowDeletePopup(!showDeletePopup)} 
         planId={(details as { planId?: string }).planId ?? ""} 
         planName={(details as { planName?: string }).planName ?? ""} 
         refetch={refetch}
-        action={() => setActionsCount(actionsCount + 1)}/>}
+        action={action}/>}
       
     </div>
   );

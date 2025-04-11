@@ -1,7 +1,8 @@
-import { z } from "zod";
+import { date, z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { v4 as uuidv4 } from 'uuid';
 import TripPopup from "~/components/createTrip";
+import { ActionRowBuilder } from "discord.js";
 
 
 export const dbRouter = createTRPCRouter( {
@@ -32,6 +33,29 @@ export const dbRouter = createTRPCRouter( {
               });
 
             return newTrip;
+        }),
+    createAction: publicProcedure
+        .input(
+            z.object({
+                tripId: z.string(),
+                type: z.string(),
+                dateTime: z.string(),
+                count: z.number(),
+            })
+        )
+        .mutation(async ({input, ctx}) => {
+            const {tripId, type, dateTime, count} = input;
+
+            const newAction = await ctx.db.action.create({
+                data: {
+                    actionId: String(uuidv4()),
+                    tripId,
+                    type,
+                    dateTime,
+                    count,
+                },
+            });
+            return newAction;
         }),
     createProd: publicProcedure
         .input(

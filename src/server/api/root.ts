@@ -3,6 +3,8 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import deepseekRouter from "./routers/deepseek";
 import ollamaRouter from "./routers/ollama";
 import { dbRouter } from "./routers/db";
+import { actionRouter } from "./routers/action";
+import "~/utils/productivityTimer";
 
 /**
  * This is the primary router for your server.
@@ -14,6 +16,7 @@ export const appRouter = createTRPCRouter({
   deepseek: deepseekRouter,
   ollama: ollamaRouter,
   database: dbRouter,
+  action: actionRouter,
 });
 
 // export type definition of API

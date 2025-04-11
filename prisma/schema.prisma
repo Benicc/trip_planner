@@ -80,6 +80,17 @@ model Productivity {
     GUIactions Json @default("[]")
 }
 
+model Action {
+    actionId String @unique
+    tripId String 
+    type String
+    dateTime DateTime
+    count Int
+
+
+    Trip Trip @relation(fields: [tripId], references: [tripId], onDelete: Cascade)
+}
+
 model Trip {
   tripId      String @unique @default(uuid()) // Automatically generates a UUID
   tripName    String @default("Untitled")
@@ -93,6 +104,8 @@ model Trip {
   changed   Boolean @default(false)
 
   plans       Plan[]
+
+  actions Action[]
 }
 
 model Plan {

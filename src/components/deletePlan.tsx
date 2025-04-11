@@ -21,7 +21,7 @@ const DeletePopup: React.FC<PopupProps> = ({ onClose, refetch, action, planId, p
         onSuccess: () => {
           // Redirect to another page after deletion (e.g., the home page)
           action();
-          router.push(`/timetable/${tripId}`); // Replace with the path you want to redirect to
+          // router.push(`/timetable/${tripId}`); // Replace with the path you want to redirect to
         },
         onError: (err) => {
           // Handle the error, maybe show a message
