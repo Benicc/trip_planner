@@ -2,7 +2,7 @@ import { useRouter } from "next/router";
 import TripView from "~/components/navbar";
 import Timetable from "~/components/timetable";
 
-export default function test() {
+export default function TimetablePage() {
     const router = useRouter()
     const {tripId} = router.query
     return (

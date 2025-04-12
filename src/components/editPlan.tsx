@@ -31,6 +31,8 @@ const EditPlanPopup: React.FC<PopupProps> = ({ onClose, refetch, action, plan })
     const updatePlanMutation = api.database.updatePlan.useMutation({
         onSuccess: newPlan => {
             console.log("success");
+            //call twice because edit is a create and delete action
+            action();
             action();
         },
         });

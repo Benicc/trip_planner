@@ -30,6 +30,7 @@
     "@trpc/react-query": "^11.0.0-rc.446",
     "@trpc/server": "^11.0.0-rc.446",
     "axios": "^1.8.4",
+    "chart.js": "^4.4.8",
     "date-fns": "^4.1.0",
     "discord.js": "^14.18.0",
     "dotenv": "^16.4.7",

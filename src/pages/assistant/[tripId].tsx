@@ -8,6 +8,63 @@ import TripView from "~/components/navbar";
 import { useRouter } from "next/router";
 import AssistantTimetable from "~/components/assistantTimetable";
 import { any } from "zod";
+import { min } from "date-fns";
+import { create } from "domain";
+
+
+function stableStringify(obj: any): string {
+  if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+
+  if (Array.isArray(obj)) {
+    return `[${obj.map(stableStringify).join(',')}]`;
+  }
+
+  const sortedKeys = Object.keys(obj).sort();
+  const sortedObj = sortedKeys.map(key => 
+    `"${key}":${stableStringify(obj[key])}`
+  );
+
+  return `{${sortedObj.join(',')}}`;
+}
+
+const compareArrays = (arr1: any[], arr2: any[]) => {
+    const map1 = new Map<string, number>();
+    const map2 = new Map<string, number>();
+
+    // Count occurrences of each object (stringified) in arr1
+    for (const obj of arr1) {
+      const key = stableStringify(obj);
+      map1.set(key, (map1.get(key) || 0) + 1);
+    }
+
+    // Count occurrences in arr2
+    for (const obj of arr2) {
+      const key = stableStringify(obj);
+      map2.set(key, (map2.get(key) || 0) + 1);
+    }
+
+    let created = 0;
+    let deleted = 0;
+
+    // Check what’s been deleted or changed
+    for (const [key, count1] of map1.entries()) {
+      const count2 = map2.get(key) || 0;
+      if (count2 < count1) {
+        deleted += count1 - count2;
+      }
+    }
+
+    // Check what’s been newly created
+    for (const [key, count2] of map2.entries()) {
+      const count1 = map1.get(key) || 0;
+      if (count2 > count1) {
+        created += count2 - count1;
+      }
+    }
+    console.log(map1, map2);
+    console.log("Created: ", created, "Deleted: ", deleted)
+    return created + deleted;
+};
 
 export default function Assistant() {
     // const events = [
@@ -39,6 +96,14 @@ export default function Assistant() {
           console.log("success");
       },
     });
+
+    const setActionMutation = api.action.set.useMutation(
+          {
+            onSuccess: () => {
+              console.log("Set action count");
+            },
+          }
+        );
 
     // useEffect(() => {
     //   if (timetableData.data && !timetableData.isLoading) {
@@ -109,6 +174,14 @@ export default function Assistant() {
         try {
           const stringRes = JSON.parse(ollamaResponse.data.response);
           res = stringRes.response;
+          //before setting events check if the number of changes and update counter
+          const eventsProcessed = events.map(({ planId, ...rest }) => rest);
+          const actionCount = compareArrays(eventsProcessed, stringRes.plans)
+          setActionMutation.mutate({
+            tripId: String(tripId),
+            type: "AI",
+            count: actionCount,
+          });
           setEvents(stringRes.plans)
         } catch (error) {
           res = ollamaResponse.data.response
