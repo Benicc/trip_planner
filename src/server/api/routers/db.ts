@@ -3,6 +3,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { v4 as uuidv4 } from 'uuid';
 import TripPopup from "~/components/createTrip";
 import { ActionRowBuilder } from "discord.js";
+import { get } from "http";
 
 
 export const dbRouter = createTRPCRouter( {
@@ -390,5 +391,48 @@ export const dbRouter = createTRPCRouter( {
 
             return updatePlan;
         }),
+    getAIActions: publicProcedure
+        .input(
+            z.string()
+        )
+        .query(async ({ctx, input}) => {
+            const tripId = input;
 
+            const actions = await ctx.db.action.findMany({
+                where: {
+                    tripId,
+                    type: "AI",
+                },
+                select: {
+                    actionId: true,
+                    dateTime: true,
+                    count: true,
+                },
+            });
+
+            return actions;
+        }
+        ),
+    getGUIActions: publicProcedure
+        .input(
+            z.string()
+        )
+        .query(async ({ctx, input}) => {
+            const tripId = input;
+
+            const actions = await ctx.db.action.findMany({
+                where: {
+                    tripId,
+                    type: "GUI",
+                },
+                select: {
+                    actionId: true,
+                    dateTime: true,
+                    count: true,
+                },
+            });
+
+            return actions;
+        }
+        ),
 })

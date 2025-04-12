@@ -92,32 +92,32 @@ export default function Timetable() {
 
   ////////////////////////////////////////////////////////
 
-  const getProd = api.database.getGUIProd.useQuery(String(tripId));
+  // const getProd = api.database.getGUIProd.useQuery(String(tripId));
 
-  useEffect(() => {
-    if (getProd.isSuccess && getProd.data !== undefined) {
-      // setAIactions(getProd.data?.AIactions as {dateTime: string, actions: number}[]);
-      setGUIactions(getProd.data?.GUIactions as {dateTime: string, actions: number}[]);
-    }
-  }, [getProd.isSuccess, getProd.data]);
+  // useEffect(() => {
+  //   if (getProd.isSuccess && getProd.data !== undefined) {
+  //     // setAIactions(getProd.data?.AIactions as {dateTime: string, actions: number}[]);
+  //     setGUIactions(getProd.data?.GUIactions as {dateTime: string, actions: number}[]);
+  //   }
+  // }, [getProd.isSuccess, getProd.data]);
 
-  const updateProd = () => {
-    const currentTime = new Date();
-    const formattedTime = format(currentTime, "yyyy-MM-dd HH:mm:ss");
+  // const updateProd = () => {
+  //   const currentTime = new Date();
+  //   const formattedTime = format(currentTime, "yyyy-MM-dd HH:mm:ss");
     
-    if (!getProd.isFetching && !getProd.isLoading && actionsCount > 0) {
-      updateProdMutation.mutate({
-        tripId: String(tripId),
-        AIactions: [...GUIactions, ...[{dateTime: formattedTime, actions: actionsCount}]],
-      });
-    }
-  }
+  //   if (!getProd.isFetching && !getProd.isLoading && actionsCount > 0) {
+  //     updateProdMutation.mutate({
+  //       tripId: String(tripId),
+  //       AIactions: [...GUIactions, ...[{dateTime: formattedTime, actions: actionsCount}]],
+  //     });
+  //   }
+  // }
 
-  useEffect(() => {
-    const interval = setInterval(updateProd, 60000); // update productivity every 60 seconds
+  // useEffect(() => {
+  //   const interval = setInterval(updateProd, 60000); // update productivity every 60 seconds
 
-    return () => {clearInterval(interval); setActionsCount(0)} // Cleanup on unmount
-  }, []);
+  //   return () => {clearInterval(interval); setActionsCount(0)} // Cleanup on unmount
+  // }, []);
   
   
   
