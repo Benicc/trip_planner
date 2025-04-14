@@ -8,6 +8,41 @@ import DeletePopup from "./deletePlan";
 import { assert } from "console";
 import EditPlanPopup from "./editPlan";
 import { JsonValue } from "@prisma/client/runtime/library";
+import { createEvents } from 'ics';
+import { title } from "process";
+
+
+const downloadICS = (events: { date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, notes: string, additional: JsonValue}[]) => {
+  const icsEvents = events.map((event) => {
+    const [startHours, startMins] = event.startTime.split(":").map(Number);
+    const [endHours, endMins] = event.endTime.split(":").map(Number);
+    const [year, month, day] = event.date.split("-").map(Number);
+
+    return {
+      title: event.planName,
+      description: event.notes,
+      start: [year, month, day, startHours, startMins] as [number, number, number, number, number],
+      end: [year, month, day, endHours, endMins] as [number, number, number, number, number],
+    };
+  }
+)
+
+  createEvents(icsEvents, (error, value) => {
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    const blob = new Blob([value], { type: 'text/calendar;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'trip.ics';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
+};
 
 
 function generateTimeArray(): string[] {
@@ -68,7 +103,7 @@ export default function Timetable() {
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [details, setDetails] = useState({});
-  const [events, setEvents] = useState<{ date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, additional: JsonValue}[]>([]);
+  const [events, setEvents] = useState<{ date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, notes: string, additional: JsonValue}[]>([]);
   const [actionsCount, setActionsCount] = useState(0);
   const [AIactions, setAIactions] = useState<{dateTime: string, actions: number}[]>([]);
   const [GUIactions, setGUIactions] = useState<{dateTime: string, actions: number}[]>([]);
@@ -84,11 +119,11 @@ export default function Timetable() {
     );
 
   const action = () => {incrementActionMutation.mutate({tripId: String(tripId), type: "GUI"})};
-  const updateProdMutation = api.database.updateProd.useMutation({
-      onSuccess: newProd => {
-          console.log("success");
-      },
-      });
+  // const updateProdMutation = api.database.updateProd.useMutation({
+  //     onSuccess: newProd => {
+  //         console.log("success");
+  //     },
+  //     });
 
   ////////////////////////////////////////////////////////
 
@@ -260,6 +295,7 @@ export default function Timetable() {
         <Details plan={details}/>
         <div className="flex space-x-4 ml-2">
           <button onClick={() => setShowPopup(!showPopup)} className="text-white w-[25%] h-12 bg-gray-800 rounded-xl">Create Plan</button>
+          <button onClick={() => downloadICS(events)} className="text-white w-[25%] h-12 bg-gray-800 rounded-xl">Download ICS</button>
           {Object.keys(details).length > 0 && (
             <div className="w-full space-x-4">
               <button onClick={() => setShowEditPopup(!showEditPopup)} className="text-white w-[25%] h-12 bg-gray-800 rounded-xl">Edit Plan</button>

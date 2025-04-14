@@ -408,6 +408,9 @@ export const dbRouter = createTRPCRouter( {
                     dateTime: true,
                     count: true,
                 },
+                orderBy: {
+                    dateTime: 'asc', // 'asc' for ascending, 'desc' for descending
+                },
             });
 
             return actions;
@@ -429,6 +432,9 @@ export const dbRouter = createTRPCRouter( {
                     actionId: true,
                     dateTime: true,
                     count: true,
+                },
+                orderBy: {
+                    dateTime: 'asc', // 'asc' for ascending, 'desc' for descending
                 },
             });
 

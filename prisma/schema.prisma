@@ -73,12 +73,12 @@ model VerificationToken {
     @@unique([identifier, token])
 }
 
-model Productivity {
-    tripId String @unique
-    prodId String @unique @default(uuid())
-    AIactions Json @default("[]")
-    GUIactions Json @default("[]")
-}
+// model Productivity {
+//     tripId String @unique
+//     prodId String @unique @default(uuid())
+//     AIactions Json @default("[]")
+//     GUIactions Json @default("[]")
+// }
 
 model Action {
     actionId String @unique
@@ -103,9 +103,13 @@ model Trip {
   historyString String @db.LongText
   changed   Boolean @default(false)
 
-  plans       Plan[]
+  plans Plan[]
 
   actions Action[]
+
+  Person Person[]
+
+  Expense Expense[]
 }
 
 model Plan {
@@ -119,6 +123,33 @@ model Plan {
     endTime String
     notes String @db.LongText
     additional Json @default("{}")
+
+    Trip Trip @relation(fields: [tripId], references: [tripId], onDelete: Cascade)
+}
+
+model Person {
+    personId String @unique @default(uuid())
+    tripId String
+    name String
+
+    Trip Trip @relation(fields: [tripId], references: [tripId], onDelete: Cascade)
+}
+
+// type Expense = {
+//   id: string;
+//   description: string;
+//   amount: number;
+//   paidBy: string; // Person ID
+//   sharedWith: string[]; // Array of Person IDs
+// };
+
+model Expense {
+    id String @unique @default(uuid())
+    tripId String
+    description String
+    amount Float
+    paidBy String // Person ID
+    sharedWith Json @default("[]")// Array of Person IDs
 
     Trip Trip @relation(fields: [tripId], references: [tripId], onDelete: Cascade)
 }

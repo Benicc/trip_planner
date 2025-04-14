@@ -32,9 +32,9 @@ export default function Home() {
           New Trip
         </button>
         {isLoading ? (
-              <p>Loading...</p>
+              <p className="text-white">Loading...</p>
             ) : error ? (
-              <p>Error loading bases</p>
+              <p className="text-white">Error loading bases</p>
             ) : (
               <ul className="space-y-2">
                 {trips?.map((trip) => (
