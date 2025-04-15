@@ -2,6 +2,8 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { actionCounters } from "~/utils/actionCounters";
 import { set } from "date-fns";
+import TripPopup from "~/components/createTrip";
+import { v4 as uuidv4 } from 'uuid';
 
 
 export const costRouter = createTRPCRouter({
@@ -29,16 +31,21 @@ export const costRouter = createTRPCRouter({
             return expense;
         }),
     createPeople: publicProcedure
-        .input(z.array(z.object({
-            tripId: z.string(),
-            name: z.string(),
-        })))
+        .input(z.object({
+            people: z.array(z.string()),
+            tripId: z.string()
+        }))
         .mutation(async ({ ctx, input }) => {
-            const people = await ctx.db.person.createMany({
-                data: input,
+            const { people, tripId } = input;
+            const newPeople = await ctx.db.person.createMany({
+                data: input.people.map((person) => ({
+                    name: person,
+                    tripId: tripId,
+                    personId: String(uuidv4()),
+                })),
             });
 
-            return people;
+            return newPeople;
         }),
     getExpenses: publicProcedure
         .input(z.object({
@@ -85,16 +92,14 @@ export const costRouter = createTRPCRouter({
 
             return expense;
         }),
-    deletePerson: publicProcedure
-        .input(z.object({
-            personId: z.string(),
-        }))
+    deletePeople: publicProcedure
+        .input(z.array(z.string()))
         .mutation(async ({ ctx, input }) => {
-            const { personId } = input;
-
-            const person = await ctx.db.person.delete({
+            const person = await ctx.db.person.deleteMany({
                 where: {
-                    id: personId,
+                    personId: {
+                        in: input,
+                    },
                 },
             });
 

@@ -37,7 +37,7 @@ const TripView: React.FC<tripProps> = ({tripId, navType}) => {
     }, []);
     
     return (
-    <div className='z-50 w-[800px] p-2'>
+    <div className='z-50 w-[50%] p-2'>
         <div className="pl-[3%] pt-[2%] space-y-1">
             <div className='flex space-x-8 items-center'>
                 <div className='flex space-x-4 items-center'>

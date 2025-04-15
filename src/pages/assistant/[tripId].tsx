@@ -357,7 +357,7 @@ export default function Assistant() {
   
     return (
       <div className="flex w-full h-screen bg-[#121212]">
-        <div className="w-[40%]">
+        <div className="w-[40%] min-w-[600px]">
           <div className="flex justify-between">
             <TripView tripId={String(tripId)} tripName="" navType="Assistant"/>
             <div className="text-white pr-[3%] pt-2">

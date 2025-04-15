@@ -5,6 +5,7 @@ import ollamaRouter from "./routers/ollama";
 import { dbRouter } from "./routers/db";
 import { actionRouter } from "./routers/action";
 import "~/utils/productivityTimer";
+import { costRouter } from "./routers/costs";
 
 /**
  * This is the primary router for your server.
@@ -17,6 +18,7 @@ export const appRouter = createTRPCRouter({
   ollama: ollamaRouter,
   database: dbRouter,
   action: actionRouter,
+  cost: costRouter,
 });
 
 // export type definition of API
