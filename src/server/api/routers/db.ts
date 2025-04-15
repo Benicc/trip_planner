@@ -441,4 +441,22 @@ export const dbRouter = createTRPCRouter( {
             return actions;
         }
         ),
+    getTripName: publicProcedure
+        .input(
+            z.string()
+        )
+        .query(async ({ctx, input}) => {
+            const tripId = input;
+
+            const tripName = await ctx.db.trip.findUnique({
+                where: {
+                    tripId,
+                },
+                select: {
+                    tripName: true,
+                },
+            });
+
+            return tripName;
+        }),
 })

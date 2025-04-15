@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Link from "next/link";
+import { api } from '~/utils/api';
 
 
 interface tripProps {
@@ -8,10 +9,18 @@ interface tripProps {
     navType: string;
 }
 
-const TripView: React.FC<tripProps> = ({tripId, tripName, navType}) => {
+const TripView: React.FC<tripProps> = ({tripId, navType}) => {
     const [isOpen, setIsOpen] = useState(false);
 
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const [tripName, setTripName] = useState("");
+    const { data, isLoading, error, refetch} = api.database.getTripName.useQuery(tripId);
+
+    useEffect(() => {
+        if (data) {
+            setTripName(data.tripName);
+        }
+    }, [data]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -28,18 +37,21 @@ const TripView: React.FC<tripProps> = ({tripId, tripName, navType}) => {
     }, []);
     
     return (
-    <div className='z-50 w-48 p-2'>
+    <div className='z-50 w-[800px] p-2'>
         <div className="pl-[3%] pt-[2%] space-y-1">
-            <div className='flex space-x-8 '>
-                <Link href={"/"}>
-                    <button className='text-white text-lg mb-1'><svg width="21" height="21" viewBox="0 -1 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M1 6V15H6V11C6 9.89543 6.89543 9 8 9C9.10457 9 10 9.89543 10 11V15H15V6L8 0L1 6Z" fill="#FFFFFF"></path> </g></svg></button>
-                </Link>
+            <div className='flex space-x-8 items-center'>
+                <div className='flex space-x-4 items-center'>
+                    <Link href={"/"}>
+                        <button className='text-white text-lg mb-1'><svg width="21" height="21" viewBox="0 -1 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M1 6V15H6V11C6 9.89543 6.89543 9 8 9C9.10457 9 10 9.89543 10 11V15H15V6L8 0L1 6Z" fill="#FFFFFF"></path> </g></svg></button>
+                    </Link>
+                    <h1 className='text-white text-lg mb-1'>{tripName}</h1>
+                </div>
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className="text-gray-500 flex hover:underline"
                 >
-                    <h1 className='text-lg mb-1'>{navType}</h1>
-                    <svg width="20" height="20" viewBox="-5 -5 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M12.7071 14.7071C12.3166 15.0976 11.6834 15.0976 11.2929 14.7071L6.29289 9.70711C5.90237 9.31658 5.90237 8.68342 6.29289 8.29289C6.68342 7.90237 7.31658 7.90237 7.70711 8.29289L12 12.5858L16.2929 8.29289C16.6834 7.90237 17.3166 7.90237 17.7071 8.29289C18.0976 8.68342 18.0976 9.31658 17.7071 9.70711L12.7071 14.7071Z" fill="#6B7280"></path> </g></svg>
+                    <h2 className='text-md mb-1'>{navType}</h2>
+                    <svg width="20" height="20" viewBox="-5 -2 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M12.7071 14.7071C12.3166 15.0976 11.6834 15.0976 11.2929 14.7071L6.29289 9.70711C5.90237 9.31658 5.90237 8.68342 6.29289 8.29289C6.68342 7.90237 7.31658 7.90237 7.70711 8.29289L12 12.5858L16.2929 8.29289C16.6834 7.90237 17.3166 7.90237 17.7071 8.29289C18.0976 8.68342 18.0976 9.31658 17.7071 9.70711L12.7071 14.7071Z" fill="#6B7280"></path> </g></svg>
                 </button>
             </div>
             {isOpen && (
