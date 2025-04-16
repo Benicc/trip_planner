@@ -114,26 +114,26 @@ const AssistantTimetable: React.FC<PlansProps> = ({ plans }) => {
       </div>
 
       {/* Timetable */}
-      <div className="sticky top-0 bg-[#121212] flex w-full border justify-between">
+      {/* <div className="sticky top-0 bg-[#121212] flex w-full border justify-between">
             <div className="px-4 py-2 text-white text-sm">Time / Date</div>
             {weekDays.map((day) => (
               <div key={day.toString()} className="px-4 py-2 text-white text-sm">
                 {format(day, "EEE, MMM d")}
               </div>
             ))}
-      </div>
+      </div> */}
       <div className="h-[55%] overflow-auto">
-        <table className="w-full min-w-max border-collapse table-fixed">
-          {/* <thead className="h-[50%]">
-            <tr className="fixed">
-              <th className="sticky px-3 py-2 text-white border">Time / Date</th>
+        <table className="w-full min-w-max border-separate border-spacing-0 table-fixed">
+          <thead className="sticky top-0 bg-neutral-800 z-10">
+            <tr>
+              <th className="sticky px-3 py-2 text-white border text-xs">Time / Date</th>
               {weekDays.map((day) => (
-                <th key={day.toString()} className="border px-3 py-2 text-white">
+                <th key={day.toString()} className="border px-3 py-2 text-white text-xs">
                   {format(day, "EEE, MMM d")}
                 </th>
               ))}
             </tr>
-          </thead> */}
+          </thead>
           <tbody>
             {times.map((time, timeIdx) => (
               <tr key={time}>

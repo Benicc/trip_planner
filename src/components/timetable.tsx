@@ -230,17 +230,17 @@ export default function Timetable() {
       </div>
 
       {/* Timetable */}
-      <div className="sticky top-0 bg-[#121212] flex w-full border justify-around">
+      {/* <div className="sticky top-0 bg-[#121212] flex w-full border justify-around">
             <div className="px-4 py-2 text-white">Time / Date</div>
             {weekDays.map((day) => (
               <div key={day.toString()} className="px-4 py-2 text-white">
                 {format(day, "EEE, MMM d")}
               </div>
             ))}
-      </div>
+      </div> */}
       <div className="h-[80%] overflow-auto">
-        <table className="w-full table-fixed min-w-max border-collapse">
-          {/* <thead className="h-[50%]">
+        <table className="w-full table-fixed min-w-max border-separate border-spacing-0">
+          <thead className="sticky top-0 bg-neutral-800 z-10">
             <tr>
               <th className="px-4 py-2 text-white border">Time / Date</th>
               {weekDays.map((day) => (
@@ -249,7 +249,7 @@ export default function Timetable() {
                 </th>
               ))}
             </tr>
-          </thead> */}
+          </thead>
           <tbody>
             {times.map((time, timeIdx) => (
               <tr key={time}>

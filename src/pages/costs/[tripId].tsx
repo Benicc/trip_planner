@@ -121,6 +121,38 @@ export default function Cost() {
                 {/* <CostTable tripId={String(tripId)}/> */}
                 {/* <h2 className="text-white text-md px-4 pt-4">Search People:</h2>
                 <input className="text-white bg-neutral-800 rounded-md ml-4 w-[50%] px-2"></input> */}
+                <h1 className="text-white text-xl px-4 pt-4">Expenses</h1>
+                <div className="flex justify-center w-full overflow-y-auto max-h-[300px]">
+                    <table className="table-auto border-separate border-spacing-0 border-gray-300">
+                        <thead className="sticky top-0 bg-neutral-800 z-10">
+                            <tr className="text-white bg-neutral-800">
+                                <th className="border border-white p-4">Description</th>
+                                <th className="border border-white p-4">Amount</th>
+                                <th className="border border-white p-4">Paid By</th>
+                                <th className="border border-white p-4">Shared With</th>
+                                <th className="p-4 bg-[#121212]"></th>
+                                <th className="p-4 bg-[#121212]"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {expenses.map((expense) =>
+                                    <tr className="text-white">
+                                        <td className="border border-white p-4">{expense.description}</td>
+                                        <td className="border border-white p-4">${expense.amount}</td>
+                                        <td className="border border-white p-4">{people.find(person => person.personId === expense.paidBy)?.name ?? ""}</td>
+                                        <td className="border border-white p-4">
+                                            {expense.sharedWith
+                                                .filter(person => person.personId !== expense.paidBy)
+                                                .map(shared => `${people.find(person => person.personId === shared.personId)?.name ?? ""} (${shared.amount})`)
+                                                .join(", ")}
+                                        </td>
+                                        <td><button className="p-4">test</button></td>
+                                        <td><button className="p-4">test</button></td>
+                                    </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
                 <h1 className="text-white text-xl px-4 pt-4">People</h1>
                 <div className="grid grid-cols-4 gap-4 px-4 pt-2 h-full overflow-y-auto">
                     {people.map( (person) => 
