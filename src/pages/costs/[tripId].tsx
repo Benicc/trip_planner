@@ -54,7 +54,12 @@ export default function Cost() {
     }, [getExpenses.data]);
 
     useEffect(() => {
-        const interval = setInterval(getPeople.refetch, 5000); // Refetch every 5 seconds
+
+        const refetchBoth = () => {
+            getPeople.refetch();
+            getExpenses.refetch();
+        };
+        const interval = setInterval(refetchBoth, 5000); // Refetch every 5 seconds
     
         return () => clearInterval(interval); // Cleanup on unmount
     }, []);
@@ -125,7 +130,7 @@ export default function Cost() {
                             <div className="flex flex-col justify-between mt-4">
                                 <div className="h-[200px] overflow-y-auto">
                                     {calculateExpenses(person.personId).owing.map((expense) => 
-                                        <div className="text-sm text-neutral-400">Owes {expense.paidByName} ${expense.amount}</div>  
+                                        <div className="text-sm text-neutral-400">Owes {expense.paidByName}: ${expense.amount}</div>  
                                     )}
                                 </div>
 
