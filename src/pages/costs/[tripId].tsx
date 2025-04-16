@@ -60,11 +60,32 @@ export default function Cost() {
     }, []);
 
     const calculateExpenses = (personId: string) => {
+        let paidByName = people.find(person => person.personId === personId);
 
-        
+        const expensesForPerson = expenses.filter(expense => expense.sharedWith.some(shared => shared.personId === personId));
+        let owing = [] as {paidBy: string, paidByName: string, amount: number}[];
+        let res = [] as {paidBy: string, paidByName: string, amount: number}[];
+        let totalExpenses = 0;
+
+        expensesForPerson.forEach((expense) => {
+            const owingDetails = expense.sharedWith.find(shared => shared.personId === personId);
+            if (owingDetails) {
+                owing.push({paidBy: expense.paidBy, paidByName: people.find(person => person.personId === expense.paidBy)?.name ?? "", amount: owingDetails.amount});
+            }
+        });
+
+        owing.forEach((item) => {
+            const existing = res.find((resItem) => resItem.paidBy === item.paidBy);
+            if (existing) {
+                existing.amount += item.amount;
+            } else {
+                res.push(item);
+            }
+            totalExpenses += item.amount;
+        });
 
 
-        return {};
+        return {owing: res.filter(expense => expense.paidBy !== personId), total: totalExpenses};
     }
 
     return (
@@ -91,13 +112,28 @@ export default function Cost() {
                     </button>
                 </div>
             </div>
-            <div className="h-[60%]">
+            <div className="">
                 {/* <CostTable tripId={String(tripId)}/> */}
                 {/* <h2 className="text-white text-md px-4 pt-4">Search People:</h2>
                 <input className="text-white bg-neutral-800 rounded-md ml-4 w-[50%] px-2"></input> */}
                 <h1 className="text-white text-xl px-4 pt-4">People</h1>
-                <div className="grid grid-cols-4 gap-4 px-4 pt-2">
-                    {people.map( (person) => <div className="bg-neutral-800 text-white p-4 rounded-lg">{person.name}</div>)}
+                <div className="grid grid-cols-4 gap-4 px-4 pt-2 h-full overflow-y-auto">
+                    {people.map( (person) => 
+                        <div className="bg-neutral-800 text-white p-4 rounded-lg">
+                            <h1 className="font-bold text-lg">{person.name}</h1>
+
+                            <div className="flex flex-col justify-between mt-4">
+                                <div className="h-[200px] overflow-y-auto">
+                                    {calculateExpenses(person.personId).owing.map((expense) => 
+                                        <div className="text-sm text-neutral-400">Owes {expense.paidByName} ${expense.amount}</div>  
+                                    )}
+                                </div>
+
+                                <div className="text-sm text-neutral-400 mt-4">Total Expenditure: ${calculateExpenses(person.personId).total}</div>
+                            </div>
+
+                        </div>)
+                    }
                 </div>
             </div>
             {togglePeople && <PeoplePopup onClose={() => setTogglePeople(!togglePeople)} getPeople={getPeople}/>}

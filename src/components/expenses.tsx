@@ -180,7 +180,7 @@ const ExpensesPopup: React.FC<PopupProps> = ({onClose, getPeople}) => {
 
             </div>
 
-            <div className="overflow-auto h-48">
+            <div className="overflow-auto max-h-48">
                 {selected.map((person, index) => 
                 
                 <div key={person.personId} className="flex justify-between items-center border border-2 px-4 py-2 mt-2">
