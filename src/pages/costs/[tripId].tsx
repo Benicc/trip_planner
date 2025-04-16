@@ -139,7 +139,7 @@ export default function Cost() {
                                         <td className="border border-white p-4">{people.find(person => person.personId === expense.paidBy)?.name ?? ""}</td>
                                         <td className="border border-white p-4 w-[300px] break-words whitespace-normal">
                                             {expense.sharedWith
-                                                .filter(person => person.personId !== expense.paidBy)
+                                                // .filter(person => person.personId !== expense.paidBy)
                                                 .map(shared => `${people.find(person => person.personId === shared.personId)?.name ?? ""} ($${shared.amount.toFixed(2)})`)
                                                 .join(", ")}
                                         </td>
