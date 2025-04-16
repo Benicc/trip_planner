@@ -14,6 +14,13 @@ export default function Cost() {
     const [toggleDelete, setToggleDelete] = useState(false);
 
     const [people, setPeople] = useState<{personId: string, name: string}[]>([]);
+    const [expenses, setExpenses] = useState<{
+        tripId: string,
+        description: string,
+        amount: number,
+        paidBy: string,
+        sharedWith: {personId: string, amount: number}[],
+    }[]>([]);
 
     const getPeople = api.cost.getPeople.useQuery({tripId: String(tripId)});
 
@@ -30,11 +37,35 @@ export default function Cost() {
         }
     }, [getPeople.data]);
 
+    const getExpenses = api.cost.getExpenses.useQuery({tripId: String(tripId)});
+
+    useEffect(() => {
+        if (getExpenses.data) {
+            setExpenses(
+                getExpenses.data.map((expense) => ({
+                    tripId: expense.tripId,
+                    description: expense.description,
+                    amount: expense.amount,
+                    paidBy: expense.paidBy,
+                    sharedWith: expense.sharedWith as {personId: string, amount: number}[],
+                })),
+            );
+        }
+    }, [getExpenses.data]);
+
     useEffect(() => {
         const interval = setInterval(getPeople.refetch, 5000); // Refetch every 5 seconds
     
         return () => clearInterval(interval); // Cleanup on unmount
     }, []);
+
+    const calculateExpenses = (personId: string) => {
+
+        
+
+
+        return {};
+    }
 
     return (
         <div className="min-w-[1200px] h-screen bg-[#121212]">
@@ -68,9 +99,9 @@ export default function Cost() {
                 <div className="grid grid-cols-4 gap-4 px-4 pt-2">
                     {people.map( (person) => <div className="bg-neutral-800 text-white p-4 rounded-lg">{person.name}</div>)}
                 </div>
-                {togglePeople && <PeoplePopup onClose={() => setTogglePeople(!togglePeople)} getPeople={getPeople}/>}
-                {toggleExpense && <ExpensesPopup onClose={() => setToggleExpense(!toggleExpense)} getPeople={getPeople}/>}
             </div>
+            {togglePeople && <PeoplePopup onClose={() => setTogglePeople(!togglePeople)} getPeople={getPeople}/>}
+            {toggleExpense && <ExpensesPopup onClose={() => setToggleExpense(!toggleExpense)} getPeople={getPeople}/>}
         </div>
     );
 };

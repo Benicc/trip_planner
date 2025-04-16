@@ -180,10 +180,10 @@ const ExpensesPopup: React.FC<PopupProps> = ({onClose, getPeople}) => {
 
             </div>
 
-            <div>
+            <div className="overflow-auto h-48">
                 {selected.map((person, index) => 
                 
-                <div key={person.personId} className="flex justify-between border border-2 px-4 py-2">
+                <div key={person.personId} className="flex justify-between items-center border border-2 px-4 py-2 mt-2">
                     <div>
                         {person.name}
                     </div>
@@ -196,7 +196,7 @@ const ExpensesPopup: React.FC<PopupProps> = ({onClose, getPeople}) => {
                         onChange={(e) => handleChange(index, e.target.value)}
                         type="decimal"
                         className="border border-2 w-[100px]"></input>
-                        <button onClick={() => handleRemove(person.personId)}>-</button>
+                        <button className="px-4 py-2" onClick={() => handleRemove(person.personId)}>-</button>
                     </div>
                     
                 </div>)}
