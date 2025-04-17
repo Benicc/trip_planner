@@ -9,7 +9,7 @@ interface Message {
   
   export default function MessageList({ messages }: MessageListProps) {
     return (
-      <div className="flex-1 overflow-y-auto space-y-2 bg-[#121212] p-4">
+      <div className="flex-1 overflow-y-auto space-y-2 p-4">
         {messages.map((msg, index) => (
           <div
             key={index}

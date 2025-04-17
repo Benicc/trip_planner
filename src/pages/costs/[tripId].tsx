@@ -1,6 +1,7 @@
 import { set } from "date-fns";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import CostAssistant from "~/components/costAssistant";
 import DeleteExpensePopup from "~/components/deleteExpense";
 import EditExpensePopup from "~/components/editExpense";
 import ExpensesPopup from "~/components/expenses";
@@ -67,16 +68,20 @@ export default function Cost() {
         }
     });
 
-    useEffect(() => {
+    const [isPaused, setIsPaused] = useState(false);
 
-        const refetchBoth = () => {
-            getPeople.refetch();
-            getExpenses.refetch();
-        };
-        const interval = setInterval(refetchBoth, 5000); // Refetch every 5 seconds
-    
-        return () => clearInterval(interval); // Cleanup on unmount
-    }, []);
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+
+        if (!isPaused) {
+            interval = setInterval(() => {
+                getPeople.refetch();
+                getExpenses.refetch();
+            }, 5000);
+        }
+
+        return () => clearInterval(interval);
+    }, [isPaused]);
 
     const calculateExpenses = (personId: string) => {
         let paidByName = people.find(person => person.personId === personId);
@@ -217,6 +222,7 @@ export default function Cost() {
                     }
                 </div>
             </div>
+            <CostAssistant setIsPaused={() => setIsPaused(true)} setPeople={setPeople} setExpenses={setExpenses}/>
             {togglePeople && <PeoplePopup onClose={() => setTogglePeople(!togglePeople)} getPeople={getPeople}/>}
             {toggleExpense && <ExpensesPopup onClose={() => setToggleExpense(!toggleExpense)} getPeople={getPeople}/>}
             {toggleDelete && <DeleteExpensePopup onClose={() => setToggleDelete(!toggleDelete)} action={() => deleteExpense.mutate({expenseId: deletingExpenseId})}/>}
