@@ -105,4 +105,29 @@ export const costRouter = createTRPCRouter({
 
             return person;
         }),
+    updateExpense: publicProcedure
+        .input(z.object({
+            id: z.string(),
+            description: z.string(),
+            amount: z.number(),
+            paidBy: z.string(),
+            sharedWith: z.any(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const {id, description, amount, paidBy, sharedWith } = input;
+
+            const expense = await ctx.db.expense.update({
+                where: {
+                    id,
+                },
+                data: {
+                    description,
+                    amount,
+                    paidBy,
+                    sharedWith,
+                },
+            });
+
+            return expense;
+        }),
 })

@@ -1,5 +1,8 @@
+import { set } from "date-fns";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import DeleteExpensePopup from "~/components/deleteExpense";
+import EditExpensePopup from "~/components/editExpense";
 import ExpensesPopup from "~/components/expenses";
 import TripView from "~/components/navbar";
 import PeoplePopup from "~/components/people";
@@ -12,9 +15,13 @@ export default function Cost() {
     const [togglePeople, setTogglePeople] = useState(false);
     const [toggleExpense, setToggleExpense] = useState(false);
     const [toggleDelete, setToggleDelete] = useState(false);
+    const [toggleEdit, setToggleEdit] = useState(false);
+    const [editingExpenseId, setEditingExpenseId] = useState("");
+    const [deletingExpenseId, setDeletingExpenseId] = useState("");
 
     const [people, setPeople] = useState<{personId: string, name: string}[]>([]);
     const [expenses, setExpenses] = useState<{
+        id: string,
         tripId: string,
         description: string,
         amount: number,
@@ -43,6 +50,7 @@ export default function Cost() {
         if (getExpenses.data) {
             setExpenses(
                 getExpenses.data.map((expense) => ({
+                    id: expense.id,
                     tripId: expense.tripId,
                     description: expense.description,
                     amount: expense.amount,
@@ -52,6 +60,12 @@ export default function Cost() {
             );
         }
     }, [getExpenses.data]);
+
+    const deleteExpense = api.cost.deleteExpense.useMutation({
+        onSuccess: () => {
+            getExpenses.refetch();
+        }
+    });
 
     useEffect(() => {
 
@@ -70,12 +84,27 @@ export default function Cost() {
         const expensesForPerson = expenses.filter(expense => expense.sharedWith.some(shared => shared.personId === personId));
         let owing = [] as {paidBy: string, paidByName: string, amount: number}[];
         let res = [] as {paidBy: string, paidByName: string, amount: number}[];
+        let paidFor = [] as {description: string, paidBy: string, paidByName: string, amount: number, expenseAmount: number}[];
         let totalExpenses = 0;
 
         expensesForPerson.forEach((expense) => {
             const owingDetails = expense.sharedWith.find(shared => shared.personId === personId);
             if (owingDetails) {
-                owing.push({paidBy: expense.paidBy, paidByName: people.find(person => person.personId === expense.paidBy)?.name ?? "", amount: owingDetails.amount});
+                owing.push({
+                    paidBy: expense.paidBy, 
+                    paidByName: people.find(person => person.personId === expense.paidBy)?.name ?? "", 
+                    amount: owingDetails.amount,
+                });
+            }
+            const paidForDetails = expense.sharedWith.find(shared => shared.personId === personId);
+            if (paidForDetails) {
+                paidFor.push({
+                    description: expense.description, 
+                    paidBy: expense.paidBy, 
+                    paidByName: people.find(person => person.personId === expense.paidBy)?.name ?? "", 
+                    amount: paidForDetails.amount,
+                    expenseAmount: expense.amount,
+                });
             }
         });
 
@@ -90,7 +119,11 @@ export default function Cost() {
         });
 
 
-        return {owing: res.filter(expense => expense.paidBy !== personId), total: totalExpenses};
+        return {
+            owing: res.filter(expense => expense.paidBy !== personId), 
+            paidFor: paidFor.filter(expense => expense.paidBy === personId),
+            total: totalExpenses,
+        };
     }
 
     return (
@@ -144,12 +177,12 @@ export default function Cost() {
                                                 .join(", ")}
                                         </td>
                                         <td>
-                                            <button className="p-4">
+                                            <button className="p-4" onClick={() => {setToggleEdit(!toggleEdit); setEditingExpenseId(expense.id);}}>
                                                 <svg height="21" width="21" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M21.2799 6.40005L11.7399 15.94C10.7899 16.89 7.96987 17.33 7.33987 16.7C6.70987 16.07 7.13987 13.25 8.08987 12.3L17.6399 2.75002C17.8754 2.49308 18.1605 2.28654 18.4781 2.14284C18.7956 1.99914 19.139 1.92124 19.4875 1.9139C19.8359 1.90657 20.1823 1.96991 20.5056 2.10012C20.8289 2.23033 21.1225 2.42473 21.3686 2.67153C21.6147 2.91833 21.8083 3.21243 21.9376 3.53609C22.0669 3.85976 22.1294 4.20626 22.1211 4.55471C22.1128 4.90316 22.0339 5.24635 21.8894 5.5635C21.7448 5.88065 21.5375 6.16524 21.2799 6.40005V6.40005Z" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M11 4H6C4.93913 4 3.92178 4.42142 3.17163 5.17157C2.42149 5.92172 2 6.93913 2 8V18C2 19.0609 2.42149 20.0783 3.17163 20.8284C3.92178 21.5786 4.93913 22 6 22H17C19.21 22 20 20.2 20 18V13" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
                                             </button>
                                         </td>
                                         <td>
-                                            <button className="p-4">
+                                            <button className="p-4" onClick={() => {setToggleDelete(!toggleDelete); setDeletingExpenseId(expense.id);}}>
                                                 <svg height="21" width="21" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M18 6L17.1991 18.0129C17.129 19.065 17.0939 19.5911 16.8667 19.99C16.6666 20.3412 16.3648 20.6235 16.0011 20.7998C15.588 21 15.0607 21 14.0062 21H9.99377C8.93927 21 8.41202 21 7.99889 20.7998C7.63517 20.6235 7.33339 20.3412 7.13332 19.99C6.90607 19.5911 6.871 19.065 6.80086 18.0129L6 6M4 6H20M16 6L15.7294 5.18807C15.4671 4.40125 15.3359 4.00784 15.0927 3.71698C14.8779 3.46013 14.6021 3.26132 14.2905 3.13878C13.9376 3 13.523 3 12.6936 3H11.3064C10.477 3 10.0624 3 9.70951 3.13878C9.39792 3.26132 9.12208 3.46013 8.90729 3.71698C8.66405 4.00784 8.53292 4.40125 8.27064 5.18807L8 6M14 10V17M10 10V17" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
                                             </button>
                                         </td>
@@ -160,13 +193,18 @@ export default function Cost() {
             }
                 </div>
                 <h1 className="text-white text-xl px-4 pt-4">People</h1>
-                <div className="grid grid-cols-4 gap-4 px-4 pt-2 h-full overflow-y-auto">
+                <div className="grid grid-cols-4 gap-4 px-4 pt-2 h-full overflow-y-auto pb-4">
                     {people.map( (person) => 
                         <div className="bg-neutral-800 text-white p-4 rounded-lg">
                             <h1 className="font-bold text-lg">{person.name}</h1>
 
                             <div className="flex flex-col justify-between mt-4">
                                 <div className="h-[200px] overflow-y-auto">
+                                    {calculateExpenses(person.personId).paidFor.map((expense) => 
+                                        <div className="text-sm text-neutral-400">
+                                            Paid ${expense.amount.toFixed(2)} for {expense.description}, ${(expense.expenseAmount - expense.amount).toFixed(2)} for others, total ${expense.expenseAmount.toFixed(2)}
+                                        </div>  
+                                    )}
                                     {calculateExpenses(person.personId).owing.map((expense) => 
                                         <div className="text-sm text-neutral-400">Owes {expense.paidByName}: ${expense.amount.toFixed(2)}</div>  
                                     )}
@@ -181,6 +219,8 @@ export default function Cost() {
             </div>
             {togglePeople && <PeoplePopup onClose={() => setTogglePeople(!togglePeople)} getPeople={getPeople}/>}
             {toggleExpense && <ExpensesPopup onClose={() => setToggleExpense(!toggleExpense)} getPeople={getPeople}/>}
+            {toggleDelete && <DeleteExpensePopup onClose={() => setToggleDelete(!toggleDelete)} action={() => deleteExpense.mutate({expenseId: deletingExpenseId})}/>}
+            {toggleEdit && <EditExpensePopup onClose={() => setToggleEdit(!toggleEdit)} getPeople={getPeople} getExpenses={getExpenses} expenseId={editingExpenseId}/>}
         </div>
     );
 };
