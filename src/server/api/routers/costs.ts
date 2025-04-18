@@ -30,6 +30,31 @@ export const costRouter = createTRPCRouter({
 
             return expense;
         }),
+    createExpenses: publicProcedure
+        .input(z.object({
+            expenses: z.array(z.object({
+                tripId: z.string(),
+                description: z.string(),
+                amount: z.number(),
+                paidBy: z.string(),
+                sharedWith: z.any(),
+            })),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const { expenses } = input;
+
+            const newExpenses = await ctx.db.expense.createMany({
+                data: input.expenses.map((expense) => ({
+                    tripId: expense.tripId,
+                    description: expense.description,
+                    amount: expense.amount,
+                    paidBy: expense.paidBy,
+                    sharedWith: expense.sharedWith,
+                })),
+            });
+
+            return newExpenses;
+        }),
     createPeople: publicProcedure
         .input(z.object({
             people: z.array(z.string()),
@@ -47,6 +72,27 @@ export const costRouter = createTRPCRouter({
 
             return newPeople;
         }),
+    createPeopleApply: publicProcedure
+        .input(z.object({
+            people: z.array(z.object({
+                name: z.string(),
+                tripId: z.string(),
+                personId: z.string(),
+            })),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const { people } = input;
+            const newPeople = await ctx.db.person.createMany({
+                data: input.people.map((person) => ({
+                    name: person.name,
+                    tripId: person.tripId,
+                    personId: person.personId,
+                })),
+            });
+
+            return newPeople;
+        }
+    ),
     getExpenses: publicProcedure
         .input(z.object({
             tripId: z.string(),
@@ -92,6 +138,21 @@ export const costRouter = createTRPCRouter({
 
             return expense;
         }),
+    deleteExpenses: publicProcedure
+        .input(z.object({
+            tripId: z.string(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const { tripId } = input;
+
+            const expenses = await ctx.db.expense.deleteMany({
+                where: {
+                    tripId,
+                },
+            });
+
+            return expenses;
+        }),
     deletePeople: publicProcedure
         .input(z.array(z.string()))
         .mutation(async ({ ctx, input }) => {
@@ -104,6 +165,22 @@ export const costRouter = createTRPCRouter({
             });
 
             return person;
+        }),
+
+    deletePeopleByTripId: publicProcedure
+        .input(z.object({
+            tripId: z.string(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const { tripId } = input;
+
+            const people = await ctx.db.person.deleteMany({
+                where: {
+                    tripId,
+                },
+            });
+
+            return people;
         }),
     updateExpense: publicProcedure
         .input(z.object({

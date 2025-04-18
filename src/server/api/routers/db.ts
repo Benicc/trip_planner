@@ -22,14 +22,19 @@ export const dbRouter = createTRPCRouter( {
 
             const newTrip = await ctx.db.trip.create({
                 data: {
-                  tripId,
-                  tripName,
-                  destination,
-                  startDate,
-                  endDate,
-                  messages: [],
-                  backendMessages: [],
-                  historyString: "",
+                    tripId,
+                    tripName,
+                    destination,
+                    startDate,
+                    endDate,
+                    messages: [],
+                    backendMessages: [],
+                    historyString: "",
+                    costMessages: [],
+                    costBackendMessages: [],
+                    costPeople: [],
+                    costExpenses: [],
+                    costHistoryString: "",
                 },
               });
 

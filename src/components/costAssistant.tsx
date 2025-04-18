@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { api } from '~/utils/api';
 import { useRouter } from "next/router";
 import Cost from "~/pages/costs/[tripId]";
 import MessageList from "./messageList";
 import { string } from "zod";
 import { v4 as uuidv4 } from 'uuid';
+import { get } from "http";
 
 
 
 interface CostAssistantProps {
-    setIsPaused: () => void;
     setPeople: (people: {personId: string, name: string}[]) => void;
     setExpenses: (expenses: {
         id: string,
@@ -19,9 +19,26 @@ interface CostAssistantProps {
         paidBy: string,
         sharedWith: {personId: string, amount: number}[],
     }[]) => void;
+    getPeople: any;
+    getExpenses: any;
+    getAssistantData: any;
+    people: {personId: string, name: string}[];
+    expenses: {
+        id: string,
+        tripId: string,
+        description: string,
+        amount: number,
+        paidBy: string,
+        sharedWith: {personId: string, amount: number}[],
+    }[];
+    toggleRevert: boolean;
+    setToggleRevert: () => void;
+    toggleApply: boolean;
 }
 
-const CostAssistant: React.FC<CostAssistantProps> = ({ setIsPaused, setPeople, setExpenses}) => {
+const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses, 
+    getPeople, getExpenses, getAssistantData, people, expenses, 
+    toggleRevert, setToggleRevert, toggleApply}) => {
     const router = useRouter();
     const {tripId} = router.query;
 
@@ -31,9 +48,96 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setIsPaused, setPeople, s
     const [backendMessages, setBackendMessages] = useState<{ sender: 'user' | 'bot'; content: string }[]>([]); //
     const [newMessage, setNewMessage] = useState("");
     const [historyString, setHistoryString] = useState(""); //
-    const ollamaResponse = api.ollama.getResponse.useQuery(historyString, {enabled:false,});
-
+    const [changed, setChanged] = useState(false); //
     const [inputValue, setInputValue] = useState('');
+    const ollamaResponse = api.ollama.getResponse.useQuery(historyString, {enabled:false,});
+    const updateAssistant = api.costAssistant.updateAssistant.useMutation();
+    
+    //handle revert
+    useEffect(() => {
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        const handleRevert = async () => {
+            updateAssistant.mutate({
+                tripId: String(tripId),
+                costMessages: [],
+                costBackendMessages: [],
+                costPeople: [],
+                costExpenses: [],
+                costHistoryString: "",
+                costChanged: false,
+            });
+
+            setMessages([]);
+            setBackendMessages([]);
+            setPeople([]);
+            setExpenses([]);
+            setHistoryString("");
+            setChanged(false);
+
+            getPeople.refetch();
+            getExpenses.refetch();
+            getAssistantData.refetch();
+            setToggleRevert();
+
+            await delay(2000);
+            window.location.reload();
+        };
+
+        if (toggleRevert) {
+            handleRevert();
+        }
+    }, [toggleRevert]);
+
+    //handle apply assistant changes
+    useEffect(() => {
+        if (toggleApply) {
+            setToggleAssistant(false);
+        }
+    }, [toggleApply]);
+
+    useEffect(() => {
+        if (getAssistantData.data && !getAssistantData.isLoading) {
+            setMessages(getAssistantData.data.costMessages);
+            setBackendMessages(getAssistantData.data.costBackendMessages);
+            setPeople(getAssistantData.data.costPeople);
+            setExpenses(getAssistantData.data.costExpenses);
+            setHistoryString(getAssistantData.data.costHistoryString);
+            setChanged(getAssistantData.data.costChanged);
+
+            if (!getAssistantData.data.costChanged) {
+                updateAssistant.mutate({
+                    tripId: String(tripId),
+                    costMessages: messages,
+                    costBackendMessages: backendMessages,
+                    costPeople: getPeople.data,
+                    costExpenses: getExpenses.data,
+                    costHistoryString: historyString,
+                    costChanged: true,
+                });
+            }
+        }
+    }
+    , [getAssistantData.data]);
+
+    const handleUpdateAssistant = async () => {
+        updateAssistant.mutate({
+            tripId: String(tripId),
+            costMessages: messages,
+            costBackendMessages: backendMessages,
+            costHistoryString: historyString,
+            costPeople: people,
+            costExpenses: expenses,
+            costChanged: changed,
+        });
+    }
+
+    useEffect(() => {
+        if (messages.length || backendMessages.length || historyString.length 
+            || people.length || expenses.length) {
+            handleUpdateAssistant();
+        }
+    }, [messages, backendMessages, historyString, people, expenses]);
+
 
     useEffect(() => {
         if (ollamaResponse.data) {
@@ -57,9 +161,9 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setIsPaused, setPeople, s
                     tripId: String(tripId), 
                     description: expense.expenseName, 
                     amount: Number(expense.amount), 
-                    paidBy: idMap[expense.paidBy], 
+                    paidBy: idMap[expense.paidBy] ?? "", 
                     sharedWith: expense.sharedWith.map((shared: any) => ({
-                        personId: idMap[shared.personName], 
+                        personId: idMap[shared.personName] ?? "", 
                         amount: Number(shared.amount)
                     })),
                 })));
@@ -94,7 +198,6 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setIsPaused, setPeople, s
           
           // Now, fetch the Ollama response
           setInputValue("");
-          setIsPaused();
           ollamaResponse.refetch()
         }
       };

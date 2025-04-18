@@ -1,163 +1,140 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "mysql"
-    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-    // Further reading:
-    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
-    url      = env("DATABASE_URL")
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+model account {
+  id                       String  @id
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String? @db.Text
+  access_token             String? @db.Text
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String? @db.Text
+  session_state            String?
+  refresh_token_expires_in Int?
+  user                     user    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Account_userId_fkey")
 
-    createdBy   User   @relation(fields: [createdById], references: [id])
-    createdById String
-
-    @@index([name])
+  @@unique([provider, providerAccountId], map: "Account_provider_providerAccountId_key")
+  @@index([userId], map: "Account_userId_fkey")
 }
 
-// Necessary for Next auth
-model Account {
-    id                       String  @id @default(cuid())
-    userId                   String
-    type                     String
-    provider                 String
-    providerAccountId        String
-    refresh_token            String? @db.Text
-    access_token             String? @db.Text
-    expires_at               Int?
-    token_type               String?
-    scope                    String?
-    id_token                 String? @db.Text
-    session_state            String?
-    user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-    refresh_token_expires_in Int?
+model action {
+  actionId String   @unique(map: "Action_actionId_key")
+  tripId   String
+  type     String
+  dateTime DateTime
+  count    Int
+  trip     trip     @relation(fields: [tripId], references: [tripId], onDelete: Cascade, map: "Action_tripId_fkey")
 
-    @@unique([provider, providerAccountId])
+  @@index([tripId], map: "Action_tripId_fkey")
 }
 
-model Session {
-    id           String   @id @default(cuid())
-    sessionToken String   @unique
-    userId       String
-    expires      DateTime
-    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model expense {
+  id          String @unique(map: "Expense_id_key")
+  tripId      String
+  description String
+  amount      Float
+  paidBy      String
+  sharedWith  Json
+  trip        trip   @relation(fields: [tripId], references: [tripId], onDelete: Cascade, map: "Expense_tripId_fkey")
+
+  @@index([tripId], map: "Expense_tripId_fkey")
 }
 
-model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
-    image         String?
-    accounts      Account[]
-    sessions      Session[]
-    posts         Post[]
+model person {
+  personId String @unique(map: "Person_personId_key")
+  tripId   String
+  name     String
+  trip     trip   @relation(fields: [tripId], references: [tripId], onDelete: Cascade, map: "Person_tripId_fkey")
+
+  @@index([tripId], map: "Person_tripId_fkey")
 }
 
-model VerificationToken {
-    identifier String
-    token      String   @unique
-    expires    DateTime
+model plan {
+  tripId     String
+  planId     String @unique(map: "Plan_planId_key")
+  planName   String
+  colour     String @default("blue")
+  planType   String
+  date       String
+  startTime  String
+  endTime    String
+  notes      String @db.LongText
+  additional Json
+  trip       trip   @relation(fields: [tripId], references: [tripId], onDelete: Cascade, map: "Plan_tripId_fkey")
 
-    @@unique([identifier, token])
+  @@index([tripId], map: "Plan_tripId_fkey")
 }
 
-// model Productivity {
-//     tripId String @unique
-//     prodId String @unique @default(uuid())
-//     AIactions Json @default("[]")
-//     GUIactions Json @default("[]")
-// }
+model post {
+  id          Int      @id @default(autoincrement())
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  createdById String
+  user        user     @relation(fields: [createdById], references: [id], map: "Post_createdById_fkey")
 
-model Action {
-    actionId String @unique
-    tripId String 
-    type String
-    dateTime DateTime
-    count Int
-
-
-    Trip Trip @relation(fields: [tripId], references: [tripId], onDelete: Cascade)
+  @@index([createdById], map: "Post_createdById_fkey")
+  @@index([name], map: "Post_name_idx")
 }
 
-model Trip {
-  tripId      String @unique @default(uuid()) // Automatically generates a UUID
-  tripName    String @default("Untitled")
-  destination String
-  startDate   String
-  endDate     String
-  // Timetable Assistant Variables
-  messages Json @default("[]")
-  backendMessages Json @default("[]")
-  events Json @default("[]")
-  historyString String @db.LongText
-  changed   Boolean @default(false)
-  // Cost Assistant Variables
-  costMessages Json @default("[]")
-  costBackendMessages Json @default("[]")
-  costPeople Json @default("[]")
-  costExpenses Json @default("[]")
-  costHistoryString String @db.LongText
-  costChanged Boolean @default(false)
+model session {
+  id           String   @id
+  sessionToken String   @unique(map: "Session_sessionToken_key")
+  userId       String
+  expires      DateTime
+  user         user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Session_userId_fkey")
 
-  plans Plan[]
-
-  actions Action[]
-
-  Person Person[]
-
-  Expense Expense[]
+  @@index([userId], map: "Session_userId_fkey")
 }
 
-model Plan {
-    tripId  String
-    planId  String @unique @default(uuid())
-    planName String
-    colour String @default("blue")
-    planType String
-    date    String
-    startTime String
-    endTime String
-    notes String @db.LongText
-    additional Json @default("{}")
-
-    Trip Trip @relation(fields: [tripId], references: [tripId], onDelete: Cascade)
+model trip {
+  tripId              String    @unique(map: "Trip_tripId_key")
+  tripName            String    @default("Untitled")
+  destination         String
+  startDate           String
+  endDate             String
+  messages            Json
+  backendMessages     Json
+  events              Json
+  historyString       String    @db.LongText
+  changed             Boolean   @default(false)
+  costMessages        Json
+  costBackendMessages Json
+  costPeople          Json
+  costExpenses        Json
+  costHistoryString   String    @db.LongText
+  costChanged         Boolean   @default(false)
+  action              action[]
+  expense             expense[]
+  person              person[]
+  plan                plan[]
 }
 
-model Person {
-    personId String @unique @default(uuid())
-    tripId String
-    name String
-
-    Trip Trip @relation(fields: [tripId], references: [tripId], onDelete: Cascade)
+model user {
+  id            String    @id
+  name          String?
+  email         String?   @unique(map: "User_email_key")
+  emailVerified DateTime?
+  image         String?
+  account       account[]
+  post          post[]
+  session       session[]
 }
 
-// type Expense = {
-//   id: string;
-//   description: string;
-//   amount: number;
-//   paidBy: string; // Person ID
-//   sharedWith: string[]; // Array of Person IDs
-// };
+model verificationtoken {
+  identifier String
+  token      String   @unique(map: "VerificationToken_token_key")
+  expires    DateTime
 
-model Expense {
-    id String @unique @default(uuid())
-    tripId String
-    description String
-    amount Float
-    paidBy String // Person ID
-    sharedWith Json @default("[]")// Array of Person IDs
-
-    Trip Trip @relation(fields: [tripId], references: [tripId], onDelete: Cascade)
+  @@unique([identifier, token], map: "VerificationToken_identifier_token_key")
 }

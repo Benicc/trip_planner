@@ -6,6 +6,8 @@ import { dbRouter } from "./routers/db";
 import { actionRouter } from "./routers/action";
 import "~/utils/productivityTimer";
 import { costRouter } from "./routers/costs";
+import CostAssistant from "~/components/costAssistant";
+import { costAssistantRouter } from "./routers/costAssistant";
 
 /**
  * This is the primary router for your server.
@@ -19,6 +21,7 @@ export const appRouter = createTRPCRouter({
   database: dbRouter,
   action: actionRouter,
   cost: costRouter,
+  costAssistant: costAssistantRouter,
 });
 
 // export type definition of API

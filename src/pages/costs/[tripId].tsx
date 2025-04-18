@@ -1,6 +1,7 @@
 import { set } from "date-fns";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import ApplyChangesPopup from "~/components/applyCostAssistant";
 import CostAssistant from "~/components/costAssistant";
 import DeleteExpensePopup from "~/components/deleteExpense";
 import EditExpensePopup from "~/components/editExpense";
@@ -19,6 +20,7 @@ export default function Cost() {
     const [toggleEdit, setToggleEdit] = useState(false);
     const [editingExpenseId, setEditingExpenseId] = useState("");
     const [deletingExpenseId, setDeletingExpenseId] = useState("");
+    const [changed, setChanged] = useState(false);
 
     const [people, setPeople] = useState<{personId: string, name: string}[]>([]);
     const [expenses, setExpenses] = useState<{
@@ -30,37 +32,12 @@ export default function Cost() {
         sharedWith: {personId: string, amount: number}[],
     }[]>([]);
 
+
+    const assistantData = api.costAssistant.getAssistantData.useQuery({tripId: String(tripId)});
     const getPeople = api.cost.getPeople.useQuery({tripId: String(tripId)});
-
-    useEffect(() => {
-        if (getPeople.data) {
-            setPeople(
-                getPeople.data
-                .map((person) => ({
-                    personId: person.personId,
-                    name: person.name,
-                    inDB: true,
-                })),
-            );
-        }
-    }, [getPeople.data]);
-
     const getExpenses = api.cost.getExpenses.useQuery({tripId: String(tripId)});
-
-    useEffect(() => {
-        if (getExpenses.data) {
-            setExpenses(
-                getExpenses.data.map((expense) => ({
-                    id: expense.id,
-                    tripId: expense.tripId,
-                    description: expense.description,
-                    amount: expense.amount,
-                    paidBy: expense.paidBy,
-                    sharedWith: expense.sharedWith as {personId: string, amount: number}[],
-                })),
-            );
-        }
-    }, [getExpenses.data]);
+    const [toggleRevert, setToggleRevert] = useState(false);
+    const [toggleApply, setToggleApply] = useState(false);
 
     const deleteExpense = api.cost.deleteExpense.useMutation({
         onSuccess: () => {
@@ -68,20 +45,14 @@ export default function Cost() {
         }
     });
 
-    const [isPaused, setIsPaused] = useState(false);
-
     useEffect(() => {
-        let interval: NodeJS.Timeout;
-
-        if (!isPaused) {
-            interval = setInterval(() => {
-                getPeople.refetch();
-                getExpenses.refetch();
-            }, 5000);
-        }
-
+        const interval = setInterval(() => {
+            getPeople.refetch();
+            getExpenses.refetch();
+        }, 5000);
+    
         return () => clearInterval(interval);
-    }, [isPaused]);
+    }, []);
 
     const calculateExpenses = (personId: string) => {
         let paidByName = people.find(person => person.personId === personId);
@@ -137,6 +108,17 @@ export default function Cost() {
                 <TripView tripId={String(tripId)} tripName={""} navType="Costs"/>
                 
                 <div className="flex space-x-2 mr-2">
+                    <button 
+                        className="flex items-center space-x-2 bg-neutral-800 px-4 py-2 rounded-xl"
+                        onClick={() => setToggleRevert(!toggleRevert)}>
+                        <svg height="21" width="21" fill="#FFFFFF" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="#FFFFFF"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M3.92399915,11.7649995 C3.77764399,11.9991677 3.4691688,12.0703543 3.23500053,11.9239992 C3.00083226,11.777644 2.92964568,11.4691688 3.07600085,11.2350005 C4.72258653,8.60046343 7.61021891,7 10.7169906,7 L11,7 C15.7839371,7 19.7251234,10.7427037 19.9862823,15.4990868 C19.9927927,15.617659 19.9970334,16.2631224 19.9999986,17.4988002 C20.0006612,17.7749418 19.7773414,17.9993359 19.5011998,17.9999986 C19.2250582,18.0006612 19.0006641,17.7773414 19.0000014,17.5011998 C18.9971538,16.3145297 18.9927506,15.6443258 18.9877863,15.5539113 C18.7556998,11.3270125 15.2522496,8 11,8 L10.7169906,8 C7.95500894,8 5.38784649,9.42284374 3.92399915,11.7649995 Z M8.5,11 C8.77614237,11 9,11.2238576 9,11.5 C9,11.7761424 8.77614237,12 8.5,12 L3.5,12 C3.22385763,12 3,11.7761424 3,11.5 L3,6.5 C3,6.22385763 3.22385763,6 3.5,6 C3.77614237,6 4,6.22385763 4,6.5 L4,11 L8.5,11 Z"></path> </g></svg>
+                        <div className="text-white text-sm">Revert AI Changes</div>
+                    </button>
+                    <button 
+                        className="flex items-center space-x-2 bg-neutral-800 px-4 py-2 rounded-xl"
+                        onClick={() => {setToggleApply(!toggleApply)}}>
+                        <svg height="21" width="21" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#FFFFFF"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M12.5535 2.49392C12.4114 2.33852 12.2106 2.25 12 2.25C11.7894 2.25 11.5886 2.33852 11.4465 2.49392L7.44648 6.86892C7.16698 7.17462 7.18822 7.64902 7.49392 7.92852C7.79963 8.20802 8.27402 8.18678 8.55352 7.88108L11.25 4.9318V16C11.25 16.4142 11.5858 16.75 12 16.75C12.4142 16.75 12.75 16.4142 12.75 16V4.9318L15.4465 7.88108C15.726 8.18678 16.2004 8.20802 16.5061 7.92852C16.8118 7.64902 16.833 7.17462 16.5535 6.86892L12.5535 2.49392Z" fill="#FFFFFF"></path> <path d="M3.75 15C3.75 14.5858 3.41422 14.25 3 14.25C2.58579 14.25 2.25 14.5858 2.25 15V15.0549C2.24998 16.4225 2.24996 17.5248 2.36652 18.3918C2.48754 19.2919 2.74643 20.0497 3.34835 20.6516C3.95027 21.2536 4.70814 21.5125 5.60825 21.6335C6.47522 21.75 7.57754 21.75 8.94513 21.75H15.0549C16.4225 21.75 17.5248 21.75 18.3918 21.6335C19.2919 21.5125 20.0497 21.2536 20.6517 20.6516C21.2536 20.0497 21.5125 19.2919 21.6335 18.3918C21.75 17.5248 21.75 16.4225 21.75 15.0549V15C21.75 14.5858 21.4142 14.25 21 14.25C20.5858 14.25 20.25 14.5858 20.25 15C20.25 16.4354 20.2484 17.4365 20.1469 18.1919C20.0482 18.9257 19.8678 19.3142 19.591 19.591C19.3142 19.8678 18.9257 20.0482 18.1919 20.1469C17.4365 20.2484 16.4354 20.25 15 20.25H9C7.56459 20.25 6.56347 20.2484 5.80812 20.1469C5.07435 20.0482 4.68577 19.8678 4.40901 19.591C4.13225 19.3142 3.9518 18.9257 3.85315 18.1919C3.75159 17.4365 3.75 16.4354 3.75 15Z" fill="#FFFFFF"></path> </g></svg><div className="text-white text-sm">Apply AI Changes</div>
+                    </button>
                     <button 
                     className="flex items-center space-x-2 bg-neutral-800 px-4 py-2 rounded-xl"
                     onClick={() => setTogglePeople(!togglePeople)}>
@@ -222,11 +204,22 @@ export default function Cost() {
                     }
                 </div>
             </div>
-            <CostAssistant setIsPaused={() => setIsPaused(true)} setPeople={setPeople} setExpenses={setExpenses}/>
+            <CostAssistant 
+                setPeople={setPeople} 
+                setExpenses={setExpenses} 
+                getPeople={getPeople}
+                getExpenses={getExpenses}
+                getAssistantData={assistantData}
+                people={people}
+                expenses={expenses}
+                toggleRevert={toggleRevert}
+                setToggleRevert={() => setToggleRevert(!toggleRevert)}
+                toggleApply={toggleApply}/>
             {togglePeople && <PeoplePopup onClose={() => setTogglePeople(!togglePeople)} getPeople={getPeople}/>}
             {toggleExpense && <ExpensesPopup onClose={() => setToggleExpense(!toggleExpense)} getPeople={getPeople}/>}
             {toggleDelete && <DeleteExpensePopup onClose={() => setToggleDelete(!toggleDelete)} action={() => deleteExpense.mutate({expenseId: deletingExpenseId})}/>}
             {toggleEdit && <EditExpensePopup onClose={() => setToggleEdit(!toggleEdit)} getPeople={getPeople} getExpenses={getExpenses} expenseId={editingExpenseId}/>}
+            {toggleApply && <ApplyChangesPopup onClose={() => setToggleApply(!toggleApply)} people={people} expenses={expenses}/>}
         </div>
     );
 };
