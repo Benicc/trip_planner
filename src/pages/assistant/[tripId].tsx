@@ -141,7 +141,7 @@ export default function Assistant() {
             messages,
             backendMessages,
             historyString,
-            events: [...assistantEvents, ...timetable],
+            events: timetable, //[...assistantEvents, ...timetable],
             changed: true,
           });
         }

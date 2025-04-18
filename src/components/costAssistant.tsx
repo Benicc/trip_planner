@@ -3,6 +3,8 @@ import { api } from '~/utils/api';
 import { useRouter } from "next/router";
 import Cost from "~/pages/costs/[tripId]";
 import MessageList from "./messageList";
+import { string } from "zod";
+import { v4 as uuidv4 } from 'uuid';
 
 
 
@@ -37,8 +39,34 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setIsPaused, setPeople, s
         if (ollamaResponse.data) {
 
         let res = ""
-
-        res = ollamaResponse.data.response
+        
+        try {
+            const stringRes = JSON.parse(ollamaResponse.data.response);
+            let idMap: { [key: string]: string } = {};
+            res = stringRes.response
+            // console.log(res)
+            if (stringRes.people) {
+                stringRes.people.forEach((person: string) => {
+                    idMap[person] = uuidv4();
+                });
+                setPeople(stringRes.people.map((person: string) => ({personId: idMap[person], name: person})));
+            }
+            if (stringRes.expenses) {
+                setExpenses(stringRes.expenses.map((expense: any) => ({
+                    id: uuidv4(), 
+                    tripId: String(tripId), 
+                    description: expense.expenseName, 
+                    amount: Number(expense.amount), 
+                    paidBy: idMap[expense.paidBy], 
+                    sharedWith: expense.sharedWith.map((shared: any) => ({
+                        personId: idMap[shared.personName], 
+                        amount: Number(shared.amount)
+                    })),
+                })));
+            }
+        } catch (error) {
+            res = ollamaResponse.data.response
+        }
 
         setMessages((prevMessages) => [
             ...prevMessages,
@@ -89,8 +117,31 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setIsPaused, setPeople, s
           
         } 
         newString += "user: " + e.target.value + "\n"
-        let prompt = ""
-        prompt = newString
+        let prompt = `
+            You are a structured cost tracker. Your task is to process user requests, answer their questions or prompts, add/remove people, add/remove expenses and update their finances accordingly.
+
+            The year is currently 2025 and the conversation history with the user is shown. This includes previous plans and any user instructions:
+
+            ${newString}
+
+            Your response must be **only** a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
+            {
+                "response": "Friendly response to the request (max 200 words).",
+                "people": [personName]
+                "expenses": [{
+                    expenseName: string,
+                    amount: number,
+                    paidBy: string,
+                    sharedWith: {personName: string, amount: number}[]
+                }]
+            }
+
+            Rules
+            - Each of the fields in expenses (expenseName, amount, paidBy) must all be populated with values other than an empty string.
+            - You must **preserve all existing expenses/people exactly as they are**, unless the user has specifically requested a change or removal.
+            - If any information is missing or unclear, respond with a clarification request in the \`response\` field and return the plans list unchanged.
+        `
+        // prompt = newString
         
   
         setHistoryString(prompt);

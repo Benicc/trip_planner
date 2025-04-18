@@ -97,11 +97,19 @@ model Trip {
   destination String
   startDate   String
   endDate     String
+  // Timetable Assistant Variables
   messages Json @default("[]")
   backendMessages Json @default("[]")
   events Json @default("[]")
   historyString String @db.LongText
   changed   Boolean @default(false)
+  // Cost Assistant Variables
+  costMessages Json @default("[]")
+  costBackendMessages Json @default("[]")
+  costPeople Json @default("[]")
+  costExpenses Json @default("[]")
+  costHistoryString String @db.LongText
+  costChanged Boolean @default(false)
 
   plans Plan[]
 
