@@ -26,8 +26,8 @@ const ApplyChangesPopup: React.FC<PopupProps> = ({ onClose, plans }) => {
     })
     
     const handleSubmit = async () => {
-        await deletePlans.mutate(String(tripId));
-        await createPlans.mutate({tripId: String(tripId), plans});
+        await deletePlans.mutateAsync(String(tripId));
+        await createPlans.mutateAsync({tripId: String(tripId), plans});
         onClose();
     }
     return (
