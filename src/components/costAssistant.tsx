@@ -112,12 +112,12 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
                     costPeople: getPeople.data,
                     costExpenses: getExpenses.data,
                     costHistoryString: historyString,
-                    costChanged: true,
+                    costChanged: false,
                 });
             }
         }
     }
-    , [getAssistantData.data]);
+    , [getAssistantData.data, getPeople.data, getExpenses.data]);
 
     const handleUpdateAssistant = async () => {
         updateAssistant.mutate({
@@ -127,16 +127,15 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
             costHistoryString: historyString,
             costPeople: people,
             costExpenses: expenses,
-            costChanged: changed,
+            costChanged: true,
         });
     }
 
     useEffect(() => {
-        if (messages.length || backendMessages.length || historyString.length 
-            || people.length || expenses.length) {
+        if (messages.length || backendMessages.length || historyString.length) {
             handleUpdateAssistant();
         }
-    }, [messages, backendMessages, historyString, people, expenses]);
+    }, [messages, backendMessages, historyString]);
 
 
     useEffect(() => {

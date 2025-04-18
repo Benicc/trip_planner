@@ -49,6 +49,7 @@ export default function Cost() {
         const interval = setInterval(() => {
             getPeople.refetch();
             getExpenses.refetch();
+            assistantData.refetch();
         }, 5000);
     
         return () => clearInterval(interval);
