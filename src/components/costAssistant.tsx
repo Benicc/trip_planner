@@ -220,29 +220,38 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
         } 
         newString += "user: " + e.target.value + "\n"
         let prompt = `
-            You are a structured cost tracker. Your task is to process user requests, answer their questions or prompts, add/remove people, add/remove expenses and update their finances accordingly.
+            You are a structured cost tracker. Your task is to process user requests to manage people and expenses, and respond accordingly.
 
-            The year is currently 2025 and the conversation history with the user is shown. This includes previous plans and any user instructions:
+            The year is currently 2025. You are given a conversation history and instructions from the user as follows:
 
             ${newString}
 
             Your response must be **only** a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
             {
                 "response": "Friendly response to the request (max 200 words).",
-                "people": [personName]
+                "people": [peopleName],
                 "expenses": [{
                     expenseName: string,
                     amount: number,
                     paidBy: string,
-                    sharedWith: {personName: string, amount: number}[]
+                    sharedWith: { personName: string, amount: number }[]
                 }]
             }
 
-            Rules
-            - Each of the fields in expenses (expenseName, amount, paidBy) must all be populated with values other than an empty string.
-            - You must **preserve all existing expenses/people exactly as they are**, unless the user has specifically requested a change or removal.
-            - If any information is missing or unclear, respond with a clarification request in the \`response\` field and return the plans list unchanged.
+            Rules:
+            - Each expense must have a name, amount > 0, a "paidBy", and at least one "sharedWith". Do not add expenses that are missing any of these.
+            - Always preserve all existing people and expenses exactly as they are, unless the user explicitly asks for a change or removal.
+            - If the user wants to:
+                - **Add** a new person/expense: include only what they clearly specified, and leave all other data unchanged.
+                - **Change** a person/expense: modify only the fields explicitly mentioned.
+                - **Remove** a person/expense: only remove if clearly stated.
+            - Do **not** assume, shorten, guess, or auto-correct names. Only use the exact names the user provides. If the name is unclear, ask for clarification.
+            - Do **not** add expenses unless the user has clearly requested one, and all required fields are present.
+            - Do **not** create or infer people or test data like “Alice”, “Bob”, “Charlie”, or zero-value expenses unless the user specifies them.
+            - When adding a person, a clear name is enough — no further details are needed unless the name itself is ambiguous.
+            - If anything is missing, unclear, or ambiguous, ask for clarification in the \`response\` and leave the \`people\` and \`expenses\` unchanged.
         `
+        
         // prompt = newString
         
   
@@ -263,10 +272,19 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
             </button>
 
             {toggleAssistant && 
-                <div className="flex flex-col items-center w-full bg-neutral-800 h-[550px] border-x border-[#121212]">
-                    <div className="w-full h-[75%] flex justify-center mb-4">
-                        <MessageList messages={messages} />
+                <div className="w-full bg-neutral-800 h-[550px] border-x border-[#121212]">
+                    <div className="w-full h-[70%] flex justify-center mb-1">
+                        <MessageList messages={messages}/>
                     </div>
+                    {!ollamaResponse.isFetching && <div className="sticky flex text-gray-500 pt-4"/>}
+                    {ollamaResponse.isFetching && (
+                        <div className="sticky flex text-gray-500 ml-[13%]">
+                            <h3 className="text-white text-sm">Generating</h3>
+                            <span className="animate-bounce text-white text-xl delay-[200ms]">.</span>
+                            <span className="animate-bounce text-white text-xl delay-[800ms]">.</span>
+                            <span className="animate-bounce text-white text-xl delay-[1600ms]">.</span>
+                        </div>
+                    )}
                     <div className="flex flex-col items-center w-full">
                         <div className="w-[80%] h-[90%] px-4 py-2 rounded-3xl shadow-sm focus:outline-none bg-[#202123] text-white">
                             <textarea
