@@ -36,6 +36,61 @@ interface CostAssistantProps {
     toggleApply: boolean;
 }
 
+function stableStringify(obj: any): string {
+    if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+  
+    if (Array.isArray(obj)) {
+      return `[${obj.map(stableStringify).join(',')}]`;
+    }
+  
+    const sortedKeys = Object.keys(obj).sort();
+    const sortedObj = sortedKeys.map(key => 
+      `"${key}":${stableStringify(obj[key])}`
+    );
+  
+    return `{${sortedObj.join(',')}}`;
+}
+
+  
+const compareArrays = (arr1: any[], arr2: any[]) => {
+    const map1 = new Map<string, number>();
+    const map2 = new Map<string, number>();
+
+    // Count occurrences of each object (stringified) in arr1
+    for (const obj of arr1) {
+      const key = stableStringify(obj);
+      map1.set(key, (map1.get(key) || 0) + 1);
+    }
+
+    // Count occurrences in arr2
+    for (const obj of arr2) {
+      const key = stableStringify(obj);
+      map2.set(key, (map2.get(key) || 0) + 1);
+    }
+
+    let created = 0;
+    let deleted = 0;
+
+    // Check what’s been deleted or changed
+    for (const [key, count1] of map1.entries()) {
+      const count2 = map2.get(key) || 0;
+      if (count2 < count1) {
+        deleted += count1 - count2;
+      }
+    }
+
+    // Check what’s been newly created
+    for (const [key, count2] of map2.entries()) {
+      const count1 = map1.get(key) || 0;
+      if (count2 > count1) {
+        created += count2 - count1;
+      }
+    }
+    console.log(map1, map2);
+    console.log("Created: ", created, "Deleted: ", deleted)
+    return created + deleted;
+};
+
 const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses, 
     getPeople, getExpenses, getAssistantData, people, expenses, 
     toggleRevert, setToggleRevert, toggleApply}) => {
@@ -52,6 +107,22 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
     const [inputValue, setInputValue] = useState('');
     const ollamaResponse = api.ollama.getResponse.useQuery(historyString, {enabled:false,});
     const updateAssistant = api.costAssistant.updateAssistant.useMutation();
+
+    const setActionMutation = api.action.set.useMutation(
+        {
+        onSuccess: () => {
+            console.log("Set action count");
+        },
+        }
+    );
+
+    const setCostActionMutation = api.action.setCost.useMutation(
+        {
+        onSuccess: () => {
+            console.log("Set action count");
+        },
+        }
+    );
     
     //handle revert
     useEffect(() => {
@@ -152,10 +223,25 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
                 stringRes.people.forEach((person: string) => {
                     idMap[person] = uuidv4();
                 });
-                setPeople(stringRes.people.map((person: string) => ({personId: idMap[person], name: person})));
+                const newPeople = stringRes.people.map((person: string) => ({personId: idMap[person], name: person}))
+                const actionCountPeople = compareArrays(
+                    people.map((person: { personId: string; name: string }) => person.name),
+                    newPeople.map((person: { personId: string; name: string }) => person.name),
+                );
+                setActionMutation.mutateAsync({
+                    tripId: String(tripId),
+                    type: "AI",
+                    count: actionCountPeople,
+                });
+                setCostActionMutation.mutateAsync({
+                    tripId: String(tripId),
+                    type: "AI",
+                    count: actionCountPeople,
+                });
+                setPeople(newPeople);
             }
             if (stringRes.expenses) {
-                setExpenses(stringRes.expenses.map((expense: any) => ({
+                const newExpenses = stringRes.expenses.map((expense: any) => ({
                     id: uuidv4(), 
                     tripId: String(tripId), 
                     description: expense.expenseName, 
@@ -165,7 +251,22 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
                         personId: idMap[shared.personName] ?? "", 
                         amount: Number(shared.amount)
                     })),
-                })));
+                }))
+                
+                const actionCountExpenses = compareArrays(
+                    expenses,
+                    newExpenses)
+                setActionMutation.mutateAsync({
+                    tripId: String(tripId),
+                    type: "AI",
+                    count: actionCountExpenses,
+                });
+                setCostActionMutation.mutateAsync({
+                    tripId: String(tripId),
+                    type: "AI",
+                    count: actionCountExpenses,
+                });
+                setExpenses(newExpenses);
             }
         } catch (error) {
             res = ollamaResponse.data.response

@@ -21,11 +21,11 @@ const TripPopup: React.FC<PopupProps> = ({ onClose }) => {
         },
       });
 
-    const createProdMutation = api.database.createProd.useMutation({
-        onSuccess: newProd => {
-          console.log("success");
-        },
-      });
+    // const createProdMutation = api.database.createProd.useMutation({
+    //     onSuccess: newProd => {
+    //       console.log("success");
+    //     },
+    //   });
 
     const handleCreateTrip = async () => {
         const tripId = String(uuidv4());
@@ -37,7 +37,7 @@ const TripPopup: React.FC<PopupProps> = ({ onClose }) => {
           endDate,
         });
 
-        createProdMutation.mutate({tripId});
+        // createProdMutation.mutate({tripId});
 
     
         onClose()

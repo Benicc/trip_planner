@@ -45,14 +45,39 @@ const PeoplePopup: React.FC<PopupProps> = ({getPeople, onClose}) => {
         },
     })
 
+    const setActionMutation = api.action.set.useMutation(
+        {
+          onSuccess: () => {
+            console.log("Set action count");
+          },
+        }
+    );
+
+    const setCostActionMutation = api.action.setCost.useMutation(
+        {
+          onSuccess: () => {
+            console.log("Set action count");
+          },
+        }
+    );
+
     // const getPeople = api.cost.getPeople.useQuery({tripId: String(tripId)});
 
     const handleUpdate = () => {
-
-        deletePeopleMutation.mutate(deletedPeople)
-
+        const action = (c: number) => {setActionMutation.mutateAsync({tripId: String(tripId), type: "GUI", count:c})};
+        const actionCost = (c: number) => {setCostActionMutation.mutateAsync({tripId: String(tripId), type: "GUI", count:c})};
         const newPeople = currentPeople.filter((person) => person.inDB === false).map((person) => person.name);
-        createPeopleMutation.mutate({
+
+        const nDeleted = deletedPeople.length
+        const nPeople = newPeople.length
+
+        action(nDeleted)
+        actionCost(nDeleted)
+        action(nPeople)
+        actionCost(nPeople)
+
+        deletePeopleMutation.mutateAsync(deletedPeople)
+        createPeopleMutation.mutateAsync({
             people: newPeople,
             tripId: String(tripId),
         });

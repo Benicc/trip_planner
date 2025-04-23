@@ -23,6 +23,25 @@ const EditExpensePopup: React.FC<PopupProps> = ({onClose, getPeople, getExpenses
     const [amount, setAmount] = useState(0);
     const [paidBy, setPaidBy] = useState(people[0] ? JSON.stringify(people[0]) : "{}");
 
+    const incrementActionMutation = api.action.increment.useMutation(
+        {
+        onSuccess: () => {
+            console.log("Incremended action count");
+        },
+        }
+    );
+
+    const incrementCostActionMutation = api.action.incrementCost.useMutation(
+        {
+        onSuccess: () => {
+            console.log("Incremended action count");
+        },
+        }
+    );
+
+    const action = () => {incrementActionMutation.mutateAsync({tripId: tripId, type: "GUI"})};
+    const actionCost = () => {incrementCostActionMutation.mutateAsync({tripId: tripId, type: "GUI"})};
+    
     useEffect(() => {
         if (getPeople.data) {
             setCurrentPeople(
@@ -125,6 +144,10 @@ const EditExpensePopup: React.FC<PopupProps> = ({onClose, getPeople, getExpenses
         onSuccess: () => {
             getPeople.refetch();
             handleClose();
+            action();
+            action();
+            actionCost();
+            actionCost();
         },
     });
 

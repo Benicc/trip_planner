@@ -100,6 +100,22 @@ const ExpensesPopup: React.FC<PopupProps> = ({onClose, getPeople}) => {
         onClose();
     }
 
+    const incrementActionMutation = api.action.increment.useMutation(
+        {
+        onSuccess: () => {
+            console.log("Incremended action count");
+        },
+        }
+    );
+
+    const incrementCostActionMutation = api.action.incrementCost.useMutation(
+        {
+        onSuccess: () => {
+            console.log("Incremended action count");
+        },
+        }
+    );
+
     const createExpenseMutation = api.cost.createExpense.useMutation({
         onSuccess: () => {
             getPeople.refetch();
@@ -108,6 +124,8 @@ const ExpensesPopup: React.FC<PopupProps> = ({onClose, getPeople}) => {
     });
 
     const handleCreateExpense = () => {
+        const action = () => {incrementActionMutation.mutateAsync({tripId: String(tripId), type: "GUI"})};
+        const actionCost = () => {incrementCostActionMutation.mutateAsync({tripId: String(tripId), type: "GUI"})};
         const sharedWith = selected.map((person) => ({ personId: person.personId, amount: person.amount }));
         console.log({
             tripId,
@@ -124,6 +142,8 @@ const ExpensesPopup: React.FC<PopupProps> = ({onClose, getPeople}) => {
             paidBy: JSON.parse(paidBy).personId,
             sharedWith,
         });
+        action()
+        actionCost()
         handleClose();
     }
 

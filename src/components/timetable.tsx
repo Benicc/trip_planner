@@ -118,7 +118,16 @@ export default function Timetable() {
       }
     );
 
-  const action = () => {incrementActionMutation.mutate({tripId: String(tripId), type: "GUI"})};
+  const incrementTimetableAction = api.action.incrementTimetable.useMutation(
+      {
+          onSuccess: () => {
+            console.log("Set action count");
+          },
+      }
+  );
+
+  const actionTimetable = () => {incrementTimetableAction.mutateAsync({tripId: String(tripId), type: "GUI"})};
+  const action = () => {incrementActionMutation.mutateAsync({tripId: String(tripId), type: "GUI"})};
   // const updateProdMutation = api.database.updateProd.useMutation({
   //     onSuccess: newProd => {
   //         console.log("success");
@@ -307,17 +316,17 @@ export default function Timetable() {
       {showPopup && <PlanPopup 
         onClose={() => setShowPopup(!showPopup)} 
         refetch={refetch} 
-        action={action}/>}
+        action={() => {action();actionTimetable();}}/>}
       {showEditPopup && <EditPlanPopup 
         onClose={() => setShowEditPopup(!showEditPopup)} plan={details} 
         refetch={refetch} 
-        action={action}/>}
+        action={() => {action();actionTimetable();}}/>}
       {showDeletePopup && <DeletePopup 
         onClose={() => setShowDeletePopup(!showDeletePopup)} 
         planId={(details as { planId?: string }).planId ?? ""} 
         planName={(details as { planName?: string }).planName ?? ""} 
         refetch={refetch}
-        action={action}/>}
+        action={() => {action();actionTimetable();}}/>}
       
     </div>
   );

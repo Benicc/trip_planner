@@ -98,12 +98,20 @@ export default function Assistant() {
     });
 
     const setActionMutation = api.action.set.useMutation(
-          {
-            onSuccess: () => {
-              console.log("Set action count");
-            },
-          }
-        );
+      {
+        onSuccess: () => {
+          console.log("Set action count");
+        },
+      }
+    );
+
+    const setTimetableActionMutation = api.action.setTimetable.useMutation(
+      {
+        onSuccess: () => {
+          console.log("Set action count");
+        },
+      }
+    );
 
     // useEffect(() => {
     //   if (timetableData.data && !timetableData.isLoading) {
@@ -178,6 +186,11 @@ export default function Assistant() {
           const eventsProcessed = events.map(({ planId, ...rest }) => rest);
           const actionCount = compareArrays(eventsProcessed, stringRes.plans)
           setActionMutation.mutate({
+            tripId: String(tripId),
+            type: "AI",
+            count: actionCount,
+          });
+          setTimetableActionMutation.mutate({
             tripId: String(tripId),
             type: "AI",
             count: actionCount,
