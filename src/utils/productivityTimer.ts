@@ -16,6 +16,8 @@ cron.schedule("* * * * *", async () => {
             type,
             dateTime: now.toISOString(),
             count,
+            timetableCount: timetableActionCounters[tripId]?.[type] ?? 0,
+            costCount: costActionCounters[tripId]?.[type] ?? 0,
           }
         });
 

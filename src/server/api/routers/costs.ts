@@ -20,6 +20,7 @@ export const costRouter = createTRPCRouter({
 
             const expense = await ctx.db.expense.create({
                 data: {
+                    id: String(uuidv4()),
                     tripId,
                     description,
                     amount,
@@ -45,6 +46,7 @@ export const costRouter = createTRPCRouter({
 
             const newExpenses = await ctx.db.expense.createMany({
                 data: input.expenses.map((expense) => ({
+                    id: String(uuidv4()),
                     tripId: expense.tripId,
                     description: expense.description,
                     amount: expense.amount,

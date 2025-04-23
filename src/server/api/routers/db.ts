@@ -35,6 +35,7 @@ export const dbRouter = createTRPCRouter( {
                     costPeople: [],
                     costExpenses: [],
                     costHistoryString: "",
+                    events: [], // Added the missing 'events' property
                 },
               });
 
@@ -59,6 +60,8 @@ export const dbRouter = createTRPCRouter( {
                     type,
                     dateTime,
                     count,
+                    timetableCount: 0, // Provide a default value or appropriate value
+                    costCount: 0, // Provide a default value or appropriate value
                 },
             });
             return newAction;
