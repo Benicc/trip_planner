@@ -33,6 +33,8 @@ model action {
   type     String
   dateTime DateTime
   count    Int
+  timetableCount Int
+  costCount Int
   trip     trip     @relation(fields: [tripId], references: [tripId], onDelete: Cascade, map: "Action_tripId_fkey")
 
   @@index([tripId], map: "Action_tripId_fkey")
