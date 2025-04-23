@@ -10,7 +10,7 @@ const chartAIOptions: ChartOptions<'line'> = {
     responsive: true,
     plugins: {
       legend: {
-        display: false,
+        display: true,
       },
       title: {
         display: true,
@@ -27,7 +27,7 @@ const chartAIOptions: ChartOptions<'line'> = {
     responsive: true,
     plugins: {
       legend: {
-        display: false,
+        display: true,
       },
       title: {
         display: true,
@@ -45,8 +45,10 @@ export default function Productivity() {
     const router = useRouter()
     const {tripId} = router.query
 
-    const [dataAI, setDataAI] = useState<{ dateTime: Date; count: number; actionId: string; }[]>([]);
-    const [dataGUI, setDataGUI] = useState<{ dateTime: Date; count: number; actionId: string; }[]>([]);
+    const [dataAI, setDataAI] = useState<{ dateTime: Date; count: number; 
+        timetableCount: number; costCount: number; actionId: string; }[]>([]);
+    const [dataGUI, setDataGUI] = useState<{ dateTime: Date; count: number; 
+        timetableCount: number; costCount: number; actionId: string; }[]>([]);
     const [AIChartData, setAIChartData] = useState<ChartData<'line'>>({labels: [], datasets: []});
     const [GUIChartData, setGUIChartData] = useState<ChartData<'line'>>({labels: [], datasets: []});
     const [toggleChart, setToggleChart] = useState(true);
@@ -82,6 +84,8 @@ export default function Productivity() {
         //load AI data
         let labelsAI = [];
         let dataListAI = [];
+        let dataListAITimetable = [];
+        let dataListAICost = [];
         const AIDataSize = dataAI.length;
         for (let i = 0; i < AIDataSize; i++){
             if (dataAI[i] !== null) {
@@ -91,6 +95,9 @@ export default function Productivity() {
                 }
                 if (dataAI[i]?.count) {
                     dataListAI.push(dataAI[i]?.count);
+                    dataListAITimetable.push(dataAI[i]?.timetableCount);
+                    dataListAICost.push(dataAI[i]?.costCount);
+
                 }
                 
             }
@@ -98,6 +105,8 @@ export default function Productivity() {
 
         let labelsGUI = [];
         let dataListGUI = [];
+        let dataListGUITimetable = [];
+        let dataListGUICost = [];
         const GUIDataSize = dataGUI.length;
         for (let i = 0; i < GUIDataSize; i++){
             if (dataGUI[i] !== null) {
@@ -107,6 +116,8 @@ export default function Productivity() {
                 }
                 if (dataGUI[i]?.count) {
                     dataListGUI.push(dataGUI[i]?.count);
+                    dataListGUITimetable.push(dataGUI[i]?.timetableCount);
+                    dataListGUICost.push(dataGUI[i]?.costCount);
                 }
                 
             }
@@ -122,6 +133,20 @@ export default function Productivity() {
                 backgroundColor: 'rgba(75, 192, 192, 0.2)', // Fill under the line (optional)
                 tension: 0,                         // Line curve (0 = straight lines)
               },
+              {
+                label: 'AI Timetable APM',           // Name shown in the legend
+                data: dataListAITimetable.filter((value): value is number => value !== undefined), // y-values for each x-label
+                borderColor: 'rgb(128, 0, 128)',     // Line color
+                backgroundColor: 'rgba(75, 192, 192, 0.2)', // Fill under the line (optional)
+                tension: 0,                         // Line curve (0 = straight lines)
+              },
+              {
+                label: 'AI Cost APM',           // Name shown in the legend
+                data: dataListAICost.filter((value): value is number => value !== undefined), // y-values for each x-label
+                borderColor: 'rgb(255, 255, 0)',     // Line color
+                backgroundColor: 'rgba(75, 192, 192, 0.2)', // Fill under the line (optional)
+                tension: 0,                         // Line curve (0 = straight lines)
+              },
             ],
 
         });
@@ -132,6 +157,20 @@ export default function Productivity() {
                 label: 'GUI APM',           // Name shown in the legend
                 data: dataListGUI.filter((value): value is number => value !== undefined), // y-values for each x-label
                 borderColor: 'rgb(75, 192, 192)',     // Line color
+                backgroundColor: 'rgba(75, 192, 192, 0.2)', // Fill under the line (optional)
+                tension: 0,                         // Line curve (0 = straight lines)
+              },
+              {
+                label: 'GUI Timetable APM',           // Name shown in the legend
+                data: dataListGUITimetable.filter((value): value is number => value !== undefined), // y-values for each x-label
+                borderColor: 'rgb(128, 0, 128)',     // Line color
+                backgroundColor: 'rgba(75, 192, 192, 0.2)', // Fill under the line (optional)
+                tension: 0,                         // Line curve (0 = straight lines)
+              },
+              {
+                label: 'GUI Cost APM',           // Name shown in the legend
+                data: dataListGUICost.filter((value): value is number => value !== undefined), // y-values for each x-label
+                borderColor: 'rgb(255, 255, 0)',     // Line color
                 backgroundColor: 'rgba(75, 192, 192, 0.2)', // Fill under the line (optional)
                 tension: 0,                         // Line curve (0 = straight lines)
               },

@@ -415,6 +415,8 @@ export const dbRouter = createTRPCRouter( {
                     actionId: true,
                     dateTime: true,
                     count: true,
+                    timetableCount: true,
+                    costCount: true,
                 },
                 orderBy: {
                     dateTime: 'asc', // 'asc' for ascending, 'desc' for descending
@@ -440,6 +442,8 @@ export const dbRouter = createTRPCRouter( {
                     actionId: true,
                     dateTime: true,
                     count: true,
+                    timetableCount: true,
+                    costCount: true,
                 },
                 orderBy: {
                     dateTime: 'asc', // 'asc' for ascending, 'desc' for descending
