@@ -320,41 +320,99 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
           
         } 
         newString += "user: " + e.target.value + "\n"
-        let prompt = `
-           You are a structured cost tracker. Your task is to process user requests to manage people and expenses, and respond accordingly.
+        let prompt = ""
+        if (recentMessagesSize <= 1) {
+            prompt = `
+                You are a structured cost tracker. Your task is to process user requests to manage people and expenses, and respond accordingly.
 
-            The year is currently 2025. You are given a conversation history and instructions from the user as follows:
+                The year is currently 2025. You are given a conversation history and instructions from the user as follows:
 
-            ${newString}
+                ${newString}
 
-            Your response must be **only** a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
-                        {
-                            "response": "Friendly response to the request (max 200 words).",
-                            "people": [person name],
-                            "expenses": [{
-                                expenseName: “expense name”,
-                                amount: “total amount paid for expense”,
-                                paidBy: “personName (person must be in people)”,
-                                sharedWith: { personName: “personName”, amount: “amount person is paying” }[]
-                            }]
+                Here are the current people and expenses:
+
+                ${JSON.stringify({
+                    people: people.map((person) => {return person.name}),
+                    expenses: expenses.map((expense) => {
+                        return {
+                            expenseName: expense.description,
+                            amount: expense.amount,
+                            paidBy: people.filter(person => person.personId === expense.paidBy)[0]?.name || "",
+                            sharedWith: expense.sharedWith.map(exp => {
+                                return {
+                                    personName: people.filter(person => person.personId === exp.personId)[0]?.name || "",
+                                    amount: exp.amount,
+                                }
+                            }),
                         }
+                    })
+                })}
 
-            Rules:
-            - Each expense must have:
-                - A non-empty \`expenseName\`
-                - A non-empty \`amount\`
-                - A \`paidBy\` field that refers to someone in \`people\`
-                - At least one \`sharedWith\` entry, each with \`personName\` and \`amount\`
-                - When splitting expenses, always include the payer (unless the user says otherwise) in the \`sharedWith\` list, with their share of the total amount
-            - **Never add a new expense unless the user has explicitly provided all required fields** (name, amount, paidBy, and sharedWith). If any are missing or unclear, do not add the expense.
-            - People is a list of person names. You may add people only when the user explicitly requests to do so.
-            - You must **preserve all existing people and expenses exactly as they are**, unless the user has specifically requested a change or removal.
-            - If the user wants to:
-                - **Add** a new person/expense: include it in addition to all the previous ones.
-                - **Change** a person/expense: modify only the specific fields that were requested and keep all others intact.
-                - **Remove** a person/expense: only remove it if explicitly stated.
-            - Do **not** modify, add, or delete any person/expense unless the user clearly requests it.
-        `
+                Your response must be **only** a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
+                            {
+                                "response": "Friendly response to the request (max 200 words).",
+                                "people": [person name],
+                                "expenses": [{
+                                    expenseName: “expense name”,
+                                    amount: “total amount paid for expense”,
+                                    paidBy: “personName (person must be in people)”,
+                                    sharedWith: { personName: “personName”, amount: “amount person is paying” }[]
+                                }]
+                            }
+
+                Rules:
+                - Each expense must have:
+                    - A non-empty \`expenseName\`
+                    - A non-empty \`amount\`
+                    - A \`paidBy\` field that refers to someone in \`people\`
+                    - At least one \`sharedWith\` entry, each with \`personName\` and \`amount\`
+                    - When splitting expenses, always include the payer (unless the user says otherwise) in the \`sharedWith\` list, with their share of the total amount
+                - **Never add a new expense unless the user has explicitly provided all required fields** (name, amount, paidBy, and sharedWith). If any are missing or unclear, do not add the expense.
+                - People is a list of person names. You may add people only when the user explicitly requests to do so.
+                - You must **preserve all existing people and expenses exactly as they are**, unless the user has specifically requested a change or removal.
+                - If the user wants to:
+                    - **Add** a new person/expense: include it in addition to all the previous ones.
+                    - **Change** a person/expense: modify only the specific fields that were requested and keep all others intact.
+                    - **Remove** a person/expense: only remove it if explicitly stated.
+                - Do **not** modify, add, or delete any person/expense unless the user clearly requests it.
+            `
+        } else {
+            prompt = `
+                You are a structured cost tracker. Your task is to process user requests to manage people and expenses, and respond accordingly.
+
+                The year is currently 2025. You are given a conversation history and instructions from the user as follows:
+
+                ${newString}
+
+                Your response must be **only** a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
+                            {
+                                "response": "Friendly response to the request (max 200 words).",
+                                "people": [person name],
+                                "expenses": [{
+                                    expenseName: “expense name”,
+                                    amount: “total amount paid for expense”,
+                                    paidBy: “personName (person must be in people)”,
+                                    sharedWith: { personName: “personName”, amount: “amount person is paying” }[]
+                                }]
+                            }
+
+                Rules:
+                - Each expense must have:
+                    - A non-empty \`expenseName\`
+                    - A non-empty \`amount\`
+                    - A \`paidBy\` field that refers to someone in \`people\`
+                    - At least one \`sharedWith\` entry, each with \`personName\` and \`amount\`
+                    - When splitting expenses, always include the payer (unless the user says otherwise) in the \`sharedWith\` list, with their share of the total amount
+                - **Never add a new expense unless the user has explicitly provided all required fields** (name, amount, paidBy, and sharedWith). If any are missing or unclear, do not add the expense.
+                - People is a list of person names. You may add people only when the user explicitly requests to do so.
+                - You must **preserve all existing people and expenses exactly as they are**, unless the user has specifically requested a change or removal.
+                - If the user wants to:
+                    - **Add** a new person/expense: include it in addition to all the previous ones.
+                    - **Change** a person/expense: modify only the specific fields that were requested and keep all others intact.
+                    - **Remove** a person/expense: only remove it if explicitly stated.
+                - Do **not** modify, add, or delete any person/expense unless the user clearly requests it.
+            `
+        }
         
         // prompt = newString
         
