@@ -171,7 +171,7 @@ export default function Assistant() {
       if (messages.length || backendMessages.length || historyString.length || events.length) {
         handleUpdateAssistant();
       }
-    }, [messages, backendMessages, historyString, events]);
+    }, [messages, backendMessages, events]);
     
 
     useEffect(() => {

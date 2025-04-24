@@ -206,7 +206,7 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
         if (messages.length || backendMessages.length || historyString.length) {
             handleUpdateAssistant();
         }
-    }, [messages, backendMessages, historyString]);
+    }, [messages, backendMessages]);
 
 
     useEffect(() => {
@@ -321,36 +321,39 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
         } 
         newString += "user: " + e.target.value + "\n"
         let prompt = `
-            You are a structured cost tracker. Your task is to process user requests to manage people and expenses, and respond accordingly.
+           You are a structured cost tracker. Your task is to process user requests to manage people and expenses, and respond accordingly.
 
             The year is currently 2025. You are given a conversation history and instructions from the user as follows:
 
             ${newString}
 
             Your response must be **only** a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
-            {
-                "response": "Friendly response to the request (max 200 words).",
-                "people": [peopleName],
-                "expenses": [{
-                    expenseName: string,
-                    amount: number,
-                    paidBy: string,
-                    sharedWith: { personName: string, amount: number }[]
-                }]
-            }
+                        {
+                            "response": "Friendly response to the request (max 200 words).",
+                            "people": [person name],
+                            "expenses": [{
+                                expenseName: “expense name”,
+                                amount: “total amount paid for expense”,
+                                paidBy: “personName (person must be in people)”,
+                                sharedWith: { personName: “personName”, amount: “amount person is paying” }[]
+                            }]
+                        }
 
             Rules:
-            - Each expense must have a name, amount > 0, a "paidBy", and at least one "sharedWith". Do not add expenses that are missing any of these.
-            - Always preserve all existing people and expenses exactly as they are, unless the user explicitly asks for a change or removal.
+            - Each expense must have:
+                - A non-empty \`expenseName\`
+                - A non-empty \`amount\`
+                - A \`paidBy\` field that refers to someone in \`people\`
+                - At least one \`sharedWith\` entry, each with \`personName\` and \`amount\`
+                - When splitting expenses, always include the payer (unless the user says otherwise) in the \`sharedWith\` list, with their share of the total amount
+            - **Never add a new expense unless the user has explicitly provided all required fields** (name, amount, paidBy, and sharedWith). If any are missing or unclear, do not add the expense.
+            - People is a list of person names. You may add people only when the user explicitly requests to do so.
+            - You must **preserve all existing people and expenses exactly as they are**, unless the user has specifically requested a change or removal.
             - If the user wants to:
-                - **Add** a new person/expense: include only what they clearly specified, and leave all other data unchanged.
-                - **Change** a person/expense: modify only the fields explicitly mentioned.
-                - **Remove** a person/expense: only remove if clearly stated.
-            - Do **not** assume, shorten, guess, or auto-correct names. Only use the exact names the user provides. If the name is unclear, ask for clarification.
-            - Do **not** add expenses unless the user has clearly requested one, and all required fields are present.
-            - Do **not** create or infer people or test data like “Alice”, “Bob”, “Charlie”, or zero-value expenses unless the user specifies them.
-            - When adding a person, a clear name is enough — no further details are needed unless the name itself is ambiguous.
-            - If anything is missing, unclear, or ambiguous, ask for clarification in the \`response\` and leave the \`people\` and \`expenses\` unchanged.
+                - **Add** a new person/expense: include it in addition to all the previous ones.
+                - **Change** a person/expense: modify only the specific fields that were requested and keep all others intact.
+                - **Remove** a person/expense: only remove it if explicitly stated.
+            - Do **not** modify, add, or delete any person/expense unless the user clearly requests it.
         `
         
         // prompt = newString
