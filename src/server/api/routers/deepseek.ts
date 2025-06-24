@@ -9,6 +9,10 @@ import { z } from "zod";
 import OpenAI from "openai";
 import { TRPCError } from "@trpc/server";
 
+function stripCodeFences(text: string): string {
+  return text.replace(/```json\s*([\s\S]*?)```/, '$1').trim();
+}
+
 
 const openai = new OpenAI({
     apiKey: process.env.DEEPSEEK_API_KEY, // Ensure your API key is set in .env
@@ -38,7 +42,8 @@ export const deepseekRouter = createTRPCRouter({
   getResponse: publicProcedure
     .input(z.string()) // Input should be a string (user's prompt)
     .query(async ({ input }) => {
-      return await callDeepSeek(input);
+      const resp = await callDeepSeek(input);
+      return stripCodeFences(resp ?? "");
     }),
 });
 

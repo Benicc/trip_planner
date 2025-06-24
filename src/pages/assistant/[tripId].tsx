@@ -10,6 +10,7 @@ import AssistantTimetable from "~/components/assistantTimetable";
 import { any } from "zod";
 import { min } from "date-fns";
 import { create } from "domain";
+import { ttInitialPrompt, ttPrompt } from "../prompts/ttPrompt";
 
 
 function stableStringify(obj: any): string {
@@ -86,7 +87,7 @@ export default function Assistant() {
     const [newMessage, setNewMessage] = useState("");
     const [historyString, setHistoryString] = useState(""); //
     const [changed, setChanged] = useState(false)
-    const ollamaResponse = api.ollama.getResponse.useQuery(historyString, {enabled:false,});
+    const ollamaResponse = api.deepseek.getResponse.useQuery(historyString, {enabled:false,});
 
     const assistantData = api.database.getAssistantData.useQuery(String(tripId));
     const timetableData = api.database.getPlans.useQuery(String(tripId));
@@ -180,7 +181,7 @@ export default function Assistant() {
         let res = ""
 
         try {
-          const stringRes = JSON.parse(ollamaResponse.data.response);
+          const stringRes = JSON.parse(ollamaResponse.data);
           res = stringRes.response;
           //before setting events check if the number of changes and update counter
           const eventsProcessed = events.map(({ planId, ...rest }) => rest);
@@ -197,7 +198,7 @@ export default function Assistant() {
           });
           setEvents(stringRes.plans)
         } catch (error) {
-          res = ollamaResponse.data.response
+          res = ollamaResponse.data
         }
         setMessages((prevMessages) => [
           ...prevMessages,
@@ -205,7 +206,7 @@ export default function Assistant() {
         ]);
         setBackendMessages((prevMessages) => [
           ...prevMessages,
-          { sender: 'bot', content: ollamaResponse.data.response},
+          { sender: 'bot', content: ollamaResponse.data},
         ]);
         console.log(events);
       }
@@ -237,7 +238,7 @@ export default function Assistant() {
   
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setInputValue(e.target.value);
-      let recentMessages = backendMessages.slice(-8) 
+      let recentMessages = backendMessages.slice(-4) 
       let recentMessagesSize = recentMessages.length 
       let newString = "" 
       for (let i=0; i < recentMessagesSize; i++) { 
@@ -247,87 +248,22 @@ export default function Assistant() {
         // if (recentMessages[i]?.sender == "bot") {
         //   newString += recentMessages[i]?.sender + ": " + JSON.parse(recentMessages[i]?.content || "{\"response\": \"error\"}").response + "\n"
         // } else {
-        newString += recentMessages[i]?.sender + ": " + recentMessages[i]?.content + "\n"
+        try {
+          newString += recentMessages[i]?.sender + ": " + JSON.parse(recentMessages[i]?.content || "{\"response\": \"error\"}").response + "\n"
+        } catch (error) {
+          newString += recentMessages[i]?.sender + ": " + recentMessages[i]?.content + "\n"
+        }
         // }
         // // }
         
       } 
       newString += "user: " + e.target.value + "\n"
       let prompt = ""
-      if (recentMessagesSize <= 1) {
-        prompt = `
-          You are a structured travel planner scheduler. Your task is to process user requests, answer user questions, extract event details, and update their schedule accordingly.
-
-          The year is currently 2025 and the conversation history with the user is shown:
-
-          ${newString}
-
-          Here are the user's current scheduled plans:
-          
-          ${JSON.stringify(events)}
-
-          Your response must **only** be a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
-          {
-            "response": "Friendly response to the request.",
-            "plans": [{
-              "planName": "eventName",
-              "planType": "type",
-              "colour": "bg-blue-500",
-              "date": "YYYY-MM-DD",
-              "startTime": "HH:mm",
-              "endTime": "HH:mm",
-              "notes": "eventDescription",
-            }]
-          }
-
-          Rules
-          - Each event's fields (planId, planName, planType, colour, date, startTime, endTime) must all be populated with values other than an empty string.
-          - You must **preserve all existing plans** from the current schedule, except for plans that the user has asked to change or remove.
-          - If a new plan is added, append it to the list.
-          - colour must be one of: bg-blue-500, bg-green-500, bg-yellow-500, bg-purple-500, bg-red-500.
-          - type must be one of: Activity, Flight, Accomodation, Restaurant.
-          - Use **24-hour format** for time.
-          - If any of the required fields are missing or ambiguous, respond with a message in \`response\` asking the user to clarify.
-        `;
-      } else {
-        prompt = `
-          You are a structured travel planner scheduler. Your task is to process user requests, answer their questions or prompts, extract event details, and update their schedule accordingly.
-
-          The year is currently 2025 and the conversation history with the user is shown. This includes previous plans and any user instructions:
-
-          ${newString}
-
-          Your response must be **only** a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
-          {
-            "response": "Friendly response to the request (max 200 words).",
-            "plans": [{
-              "planName": "eventName",
-              "planType": "type",
-              "colour": "bg-blue-500",
-              "date": "YYYY-MM-DD",
-              "startTime": "HH:mm",
-              "endTime": "HH:mm",
-              "notes": "eventDescription",
-            }]
-          }
-
-          Rules
-          - Each event's fields (planName, planType, colour, date, startTime, endTime) must all be populated with values other than an empty string.
-          - You must **preserve all existing plans exactly as they are**, unless the user has specifically requested a change or removal.
-          - If the user wants to:
-            - **Add** a new plan: include it in addition to all the previous ones.
-            - **Change** an existing plan: modify only the specific fields that were requested and keep all others intact.
-            - **Remove** a plan: only remove it if explicitly stated.
-          - Do **not** modify, merge, or delete any plans unless the user clearly requests it.
-          - Use these values:
-            - \`colour\`: one of bg-blue-500, bg-green-500, bg-yellow-500, bg-purple-500, bg-red-500
-            - \`planType\`: one of Activity, Flight, Accommodation, Restaurant
-          - Use **24-hour format** for all times.
-          - If any information is missing or unclear, respond with a clarification request in the \`response\` field and return the plans list unchanged.
-
-          You must return the complete updated list of all plans (new, changed, and unchanged) inside the \`plans\` array.
-        `;
-      }
+      // if (recentMessagesSize <= 1) {
+      prompt = ttInitialPrompt(newString, events);
+      // } else {
+      //   prompt = ttPrompt(newString, events);
+      // }
       
 
       setHistoryString(prompt);
