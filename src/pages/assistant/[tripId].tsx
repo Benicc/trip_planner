@@ -238,7 +238,7 @@ export default function Assistant() {
   
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setInputValue(e.target.value);
-      let recentMessages = backendMessages.slice(-4) 
+      let recentMessages = backendMessages.slice(-2) 
       let recentMessagesSize = recentMessages.length 
       let newString = "" 
       for (let i=0; i < recentMessagesSize; i++) { 
