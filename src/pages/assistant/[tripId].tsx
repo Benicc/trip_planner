@@ -183,9 +183,25 @@ export default function Assistant() {
         try {
           const stringRes = JSON.parse(ollamaResponse.data);
           res = stringRes.response;
-          //before setting events check if the number of changes and update counter
-          const eventsProcessed = events.map(({ planId, ...rest }) => rest);
-          const actionCount = compareArrays(eventsProcessed, stringRes.plans)
+
+          console.log("Ollama response: ", stringRes);
+
+          let newEvents = structuredClone(events);
+
+          stringRes.remove.forEach((plan: any) => {
+            const index = newEvents.findIndex((event) => event.planName === plan.planName);
+            if (index !== -1) {
+              newEvents.splice(index, 1);
+            }
+          });
+
+          stringRes.add.forEach((plan: { date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, notes: string}) => {
+            newEvents.push(plan);
+          });
+
+          //for productivity: before setting events check if the number of changes and update counter
+          const eventsProcessed = newEvents.map(({ planId, ...rest }) => rest);
+          const actionCount = compareArrays(eventsProcessed, newEvents)
           setActionMutation.mutate({
             tripId: String(tripId),
             type: "AI",
@@ -196,9 +212,9 @@ export default function Assistant() {
             type: "AI",
             count: actionCount,
           });
-          setEvents(stringRes.plans)
+          setEvents(newEvents);
         } catch (error) {
-          res = ollamaResponse.data
+          res = ollamaResponse.data;
         }
         setMessages((prevMessages) => [
           ...prevMessages,
