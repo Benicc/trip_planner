@@ -6,6 +6,7 @@ import MessageList from "./messageList";
 import { string } from "zod";
 import { v4 as uuidv4 } from 'uuid';
 import { get } from "http";
+import { caPrompt } from "~/pages/prompts/caPrompt";
 
 
 
@@ -105,7 +106,7 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
     const [historyString, setHistoryString] = useState(""); //
     const [changed, setChanged] = useState(false); //
     const [inputValue, setInputValue] = useState('');
-    const ollamaResponse = api.ollama.getResponse.useQuery(historyString, {enabled:false,});
+    const ollamaResponse = api.deepseek.getResponse.useQuery(historyString, {enabled:false,});
     const updateAssistant = api.costAssistant.updateAssistant.useMutation();
 
     const setActionMutation = api.action.set.useMutation(
@@ -215,18 +216,66 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
         let res = ""
         
         try {
-            const stringRes = JSON.parse(ollamaResponse.data.response);
+            const stringRes = JSON.parse(ollamaResponse.data);
             let idMap: { [key: string]: string } = {};
             res = stringRes.response
+
+            console.log("Ollama response: ", stringRes);
+
+            //dont send whole data only send required operations
+            // stringRes = {response: , addPeople:[], removePeople:[], addExpenses:[], removeExpenses:[]}
+
+            let updatedPeople = structuredClone(people);
+            updatedPeople = updatedPeople.map((person: { personId: string; name: string }) => {
+                idMap[person.name] = person.personId;
+                return person;
+            });
+
+            let updatedExpenses = structuredClone(expenses);
+
+            stringRes.removePeople.forEach((person: string) => {
+                const index = updatedPeople.findIndex((p) => p.name === person);
+                if (index !== -1) {
+                    updatedPeople.splice(index, 1);
+                }
+            });
+
+            stringRes.addPeople.forEach((person: string) => {
+                if (person) {
+                    let newId = uuidv4();
+                    idMap[person] = newId;
+                    updatedPeople.push({ personId: newId, name: person });
+                }
+            });
+
+            stringRes.removeExpenses.forEach((expense: string) => {
+                const index = updatedExpenses.findIndex((exp) => exp.description === expense);
+                if (index !== -1) {
+                    updatedExpenses.splice(index, 1);
+                }
+            });
+
+            stringRes.addExpenses.forEach((expense: any) => {
+                if (expense.expenseName && expense.amount && expense.paidBy && expense.sharedWith) {
+                    updatedExpenses.push({
+                        id: uuidv4(),
+                        tripId: String(tripId),
+                        description: expense.expenseName,
+                        amount: Number(expense.amount),
+                        paidBy: idMap[expense.paidBy] ?? "",
+                        sharedWith: expense.sharedWith.map((shared: any) => ({
+                            personId: idMap[shared.personName] ?? "",
+                            amount: Number(shared.amount)
+                        })),
+                    });
+                }
+            });
+
             // console.log(res)
-            if (stringRes.people) {
-                stringRes.people.forEach((person: string) => {
-                    idMap[person] = uuidv4();
-                });
-                const newPeople = stringRes.people.map((person: string) => ({personId: idMap[person], name: person}))
+            if (updatedPeople) {
                 const actionCountPeople = compareArrays(
                     people.map((person: { personId: string; name: string }) => person.name),
-                    newPeople.map((person: { personId: string; name: string }) => person.name),
+                    updatedPeople.map((person: { personId: string; name: string }) => person.name),
                 );
                 setActionMutation.mutateAsync({
                     tripId: String(tripId),
@@ -238,24 +287,13 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
                     type: "AI",
                     count: actionCountPeople,
                 });
-                setPeople(newPeople);
+                setPeople(updatedPeople);
             }
-            if (stringRes.expenses) {
-                const newExpenses = stringRes.expenses.map((expense: any) => ({
-                    id: uuidv4(), 
-                    tripId: String(tripId), 
-                    description: expense.expenseName, 
-                    amount: Number(expense.amount), 
-                    paidBy: idMap[expense.paidBy] ?? "", 
-                    sharedWith: expense.sharedWith.map((shared: any) => ({
-                        personId: idMap[shared.personName] ?? "", 
-                        amount: Number(shared.amount)
-                    })),
-                }))
-                
+            if (updatedExpenses) {  
                 const actionCountExpenses = compareArrays(
                     expenses,
-                    newExpenses)
+                    updatedExpenses
+                );
                 setActionMutation.mutateAsync({
                     tripId: String(tripId),
                     type: "AI",
@@ -266,10 +304,10 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
                     type: "AI",
                     count: actionCountExpenses,
                 });
-                setExpenses(newExpenses);
+                setExpenses(updatedExpenses);
             }
         } catch (error) {
-            res = ollamaResponse.data.response
+            res = ollamaResponse.data
         }
 
         setMessages((prevMessages) => [
@@ -278,7 +316,7 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
         ]);
         setBackendMessages((prevMessages) => [
             ...prevMessages,
-            { sender: 'bot', content: ollamaResponse.data.response},
+            { sender: 'bot', content: ollamaResponse.data},
         ]);
         }
     }, [ollamaResponse.data]);
@@ -304,7 +342,7 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
 
       const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setInputValue(e.target.value);
-        let recentMessages = backendMessages.slice(-8) 
+        let recentMessages = backendMessages.slice(-2) 
         let recentMessagesSize = recentMessages.length 
         let newString = "" 
         for (let i=0; i < recentMessagesSize; i++) { 
@@ -320,101 +358,7 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
           
         } 
         newString += "user: " + e.target.value + "\n"
-        let prompt = ""
-        if (recentMessagesSize <= 1) {
-            prompt = `
-                You are a structured cost tracker. Your task is to process user requests to manage people and expenses, and respond accordingly.
-
-                The year is currently 2025. You are given a conversation history and instructions from the user as follows:
-
-                ${newString}
-
-                Here are the current people and expenses:
-
-                ${JSON.stringify({
-                    people: people.map((person) => {return person.name}),
-                    expenses: expenses.map((expense) => {
-                        return {
-                            expenseName: expense.description,
-                            amount: expense.amount,
-                            paidBy: people.filter(person => person.personId === expense.paidBy)[0]?.name || "",
-                            sharedWith: expense.sharedWith.map(exp => {
-                                return {
-                                    personName: people.filter(person => person.personId === exp.personId)[0]?.name || "",
-                                    amount: exp.amount,
-                                }
-                            }),
-                        }
-                    })
-                })}
-
-                Your response must be **only** a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
-                            {
-                                "response": "Friendly response to the request (max 200 words).",
-                                "people": [person name],
-                                "expenses": [{
-                                    expenseName: “expense name”,
-                                    amount: “total amount paid for expense”,
-                                    paidBy: “personName (person must be in people)”,
-                                    sharedWith: { personName: “personName”, amount: “amount person is paying” }[]
-                                }]
-                            }
-
-                Rules:
-                - Each expense must have:
-                    - A non-empty \`expenseName\`
-                    - A non-empty \`amount\`
-                    - A \`paidBy\` field that refers to someone in \`people\`
-                    - At least one \`sharedWith\` entry, each with \`personName\` and \`amount\`
-                    - When splitting expenses, always include the payer (unless the user says otherwise) in the \`sharedWith\` list, with their share of the total amount
-                - **Never add a new expense unless the user has explicitly provided all required fields** (name, amount, paidBy, and sharedWith). If any are missing or unclear, do not add the expense.
-                - People is a list of person names. You may add people only when the user explicitly requests to do so.
-                - You must **preserve all existing people and expenses exactly as they are**, unless the user has specifically requested a change or removal.
-                - If the user wants to:
-                    - **Add** a new person/expense: include it in addition to all the previous ones.
-                    - **Change** a person/expense: modify only the specific fields that were requested and keep all others intact.
-                    - **Remove** a person/expense: only remove it if explicitly stated.
-                - Do **not** modify, add, or delete any person/expense unless the user clearly requests it.
-            `
-        } else {
-            prompt = `
-                You are a structured cost tracker. Your task is to process user requests to manage people and expenses, and respond accordingly.
-
-                The year is currently 2025. You are given a conversation history and instructions from the user as follows:
-
-                ${newString}
-
-                Your response must be **only** a valid JSON object **with no additional text, explanations, or preambles**. It must strictly follow this format:
-                            {
-                                "response": "Friendly response to the request (max 200 words).",
-                                "people": [person name],
-                                "expenses": [{
-                                    expenseName: “expense name”,
-                                    amount: “total amount paid for expense”,
-                                    paidBy: “personName (person must be in people)”,
-                                    sharedWith: { personName: “personName”, amount: “amount person is paying” }[]
-                                }]
-                            }
-
-                Rules:
-                - Each expense must have:
-                    - A non-empty \`expenseName\`
-                    - A non-empty \`amount\`
-                    - A \`paidBy\` field that refers to someone in \`people\`
-                    - At least one \`sharedWith\` entry, each with \`personName\` and \`amount\`
-                    - When splitting expenses, always include the payer (unless the user says otherwise) in the \`sharedWith\` list, with their share of the total amount
-                - **Never add a new expense unless the user has explicitly provided all required fields** (name, amount, paidBy, and sharedWith). If any are missing or unclear, do not add the expense.
-                - People is a list of person names. You may add people only when the user explicitly requests to do so.
-                - You must **preserve all existing people and expenses exactly as they are**, unless the user has specifically requested a change or removal.
-                - If the user wants to:
-                    - **Add** a new person/expense: include it in addition to all the previous ones.
-                    - **Change** a person/expense: modify only the specific fields that were requested and keep all others intact.
-                    - **Remove** a person/expense: only remove it if explicitly stated.
-                - Do **not** modify, add, or delete any person/expense unless the user clearly requests it.
-            `
-        }
-        
-        // prompt = newString
+        let prompt = caPrompt(newString, people, expenses);
         
   
         setHistoryString(prompt);
