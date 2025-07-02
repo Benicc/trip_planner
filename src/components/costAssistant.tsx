@@ -233,43 +233,51 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
 
             let updatedExpenses = structuredClone(expenses);
 
-            stringRes.removePeople.forEach((person: string) => {
-                const index = updatedPeople.findIndex((p) => p.name === person);
-                if (index !== -1) {
-                    updatedPeople.splice(index, 1);
-                }
-            });
+            if ("removePeople" in stringRes) {
+                stringRes.removePeople.forEach((person: string) => {
+                    const index = updatedPeople.findIndex((p) => p.name === person);
+                    if (index !== -1) {
+                        updatedPeople.splice(index, 1);
+                    }
+                });
+            }
 
-            stringRes.addPeople.forEach((person: string) => {
-                if (person) {
-                    let newId = uuidv4();
-                    idMap[person] = newId;
-                    updatedPeople.push({ personId: newId, name: person });
-                }
-            });
+            if ("addPeople" in stringRes) {
+                stringRes.addPeople.forEach((person: string) => {
+                    if (person) {
+                        let newId = uuidv4();
+                        idMap[person] = newId;
+                        updatedPeople.push({ personId: newId, name: person });
+                    }
+                });
+            }
 
-            stringRes.removeExpenses.forEach((expense: string) => {
-                const index = updatedExpenses.findIndex((exp) => exp.description === expense);
-                if (index !== -1) {
-                    updatedExpenses.splice(index, 1);
-                }
-            });
+            if ("removeExpenses" in stringRes) {
+                stringRes.removeExpenses.forEach((expense: string) => {
+                    const index = updatedExpenses.findIndex((exp) => exp.description === expense);
+                    if (index !== -1) {
+                        updatedExpenses.splice(index, 1);
+                    }
+                });
+            }
 
-            stringRes.addExpenses.forEach((expense: any) => {
-                if (expense.expenseName && expense.amount && expense.paidBy && expense.sharedWith) {
-                    updatedExpenses.push({
-                        id: uuidv4(),
-                        tripId: String(tripId),
-                        description: expense.expenseName,
-                        amount: Number(expense.amount),
-                        paidBy: idMap[expense.paidBy] ?? "",
-                        sharedWith: expense.sharedWith.map((shared: any) => ({
-                            personId: idMap[shared.personName] ?? "",
-                            amount: Number(shared.amount)
-                        })),
-                    });
-                }
-            });
+            if ("addExpenses" in stringRes) {
+                stringRes.addExpenses.forEach((expense: any) => {
+                    if (expense.expenseName && expense.amount && expense.paidBy && expense.sharedWith) {
+                        updatedExpenses.push({
+                            id: uuidv4(),
+                            tripId: String(tripId),
+                            description: expense.expenseName,
+                            amount: Number(expense.amount),
+                            paidBy: idMap[expense.paidBy] ?? "",
+                            sharedWith: expense.sharedWith.map((shared: any) => ({
+                                personId: idMap[shared.personName] ?? "",
+                                amount: Number(shared.amount)
+                            })),
+                        });
+                    }
+                });
+            }
 
             // console.log(res)
             if (updatedPeople) {
