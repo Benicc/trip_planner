@@ -11,6 +11,14 @@ import { any } from "zod";
 import { min } from "date-fns";
 import { create } from "domain";
 import { ttInitialPrompt, ttPrompt } from "../prompts/ttPrompt";
+import crypto from 'crypto';
+
+
+function hashText(obj: any): string {
+  const json = JSON.stringify(obj); // Assumes keys already in correct order
+  const hash = crypto.createHash('sha256').update(json).digest('hex');
+  return hash;
+}
 
 
 function stableStringify(obj: any): string {
@@ -86,7 +94,7 @@ export default function Assistant() {
     const [events, setEvents] = useState<{ date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, notes: string}[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [historyString, setHistoryString] = useState(""); //
-    const [changed, setChanged] = useState(false)
+    const [changed, setChanged] = useState(false);
     const ollamaResponse = api.deepseek.getResponse.useQuery(historyString, {enabled:false,});
 
     const assistantData = api.database.getAssistantData.useQuery(String(tripId));
@@ -137,13 +145,8 @@ export default function Assistant() {
         const assistantHistory = assistantData.data?.historyString || ""
         const assistantEvents = assistantData.data?.events as { date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, notes: string}[] || []
         const assistantChanged = assistantData.data?.changed || false;
-        setMessages(assistantMessages);
-        setBackendMessages(assistantBackend);
-        setHistoryString(assistantHistory);
-        setEvents(assistantEvents);
-        setChanged(assistantChanged);
 
-        if (!assistantChanged) {
+        if (!assistantChanged && !changed) {
           const timetable = timetableData.data as { date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, notes: string}[];
           updateAssistant.mutate({
             tripId: String(tripId),
@@ -153,30 +156,37 @@ export default function Assistant() {
             events: timetable, //[...assistantEvents, ...timetable],
             changed: true,
           });
+        } else {
+          setMessages(assistantMessages);
+          setBackendMessages(assistantBackend);
+          setHistoryString(assistantHistory);
+          setEvents(assistantEvents);
+          setChanged(assistantChanged);
         }
       }
     }, [assistantData.data]);
 
     const handleUpdateAssistant = async () => {
-        updateAssistant.mutate({
-            tripId: String(tripId),
-            messages,
-            backendMessages,
-            historyString,
-            events,
-            changed,
-        });
+      //updateAssistant data
+      updateAssistant.mutate({
+          tripId: String(tripId),
+          messages,
+          backendMessages,
+          historyString,
+          events,
+          changed,
+      });
     }
 
     useEffect(() => {
-      if (messages.length || backendMessages.length || historyString.length || events.length) {
+      if (messages.length || backendMessages.length) {
         handleUpdateAssistant();
       }
-    }, [messages, backendMessages, events]);
+    }, [messages, backendMessages]);
     
 
     useEffect(() => {
-      if (ollamaResponse.data) {
+      if (ollamaResponse.data && ollamaResponse.data !== "") {
 
         let res = ""
 
@@ -185,14 +195,22 @@ export default function Assistant() {
           res = stringRes.response;
 
           console.log("Ollama response: ", stringRes);
+          
+          //remove duplicate events based on planName
+          const preProcessEvents = structuredClone(events);
+          const seen = new Set();
+          const uniqueEvents = preProcessEvents.filter(event => {
+            const key = event.planName;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
 
-          let newEvents = structuredClone(events);
+          let newEvents = structuredClone(uniqueEvents);
+          let originalEvents = structuredClone(uniqueEvents);
 
           stringRes.remove.forEach((plan: any) => {
-            const index = newEvents.findIndex((event) => event.planName === plan.planName);
-            if (index !== -1) {
-              newEvents.splice(index, 1);
-            }
+            newEvents = newEvents.filter(event => event.planName !== plan.planName);
           });
 
           stringRes.add.forEach((plan: { date: string, startTime: string, endTime: string, planName: string, colour:string, planId:string, planType: string, notes: string}) => {
@@ -200,8 +218,11 @@ export default function Assistant() {
           });
 
           //for productivity: before setting events check if the number of changes and update counter
-          const eventsProcessed = newEvents.map(({ planId, ...rest }) => rest);
-          const actionCount = compareArrays(eventsProcessed, newEvents)
+          const eventsProcessed = originalEvents.map(({ planId, ...rest }) => rest);
+          const newEventsProcessed = newEvents.map(({ planId, ...rest }) => rest);
+          console.log("Events processed: ", eventsProcessed);
+          console.log("New events processed: ", newEventsProcessed);
+          const actionCount = compareArrays(eventsProcessed, newEventsProcessed);
           setActionMutation.mutate({
             tripId: String(tripId),
             type: "AI",
@@ -216,14 +237,19 @@ export default function Assistant() {
         } catch (error) {
           res = ollamaResponse.data;
         }
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { sender: 'bot', content: res},
-        ]);
-        setBackendMessages((prevMessages) => [
-          ...prevMessages,
-          { sender: 'bot', content: ollamaResponse.data},
-        ]);
+        //only add the message if it is not the same as the last one
+        //prevents race condition with the updateAssistant mutation
+        //where updateAssistant is called before the ollamaResponse is set
+        if (backendMessages[backendMessages.length - 1] && hashText(backendMessages[backendMessages.length - 1]) != hashText(ollamaResponse.data)) {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { sender: 'bot', content: res},
+          ]);
+          setBackendMessages((prevMessages) => [
+              ...prevMessages,
+              { sender: 'bot', content: ollamaResponse.data},
+          ]);
+        }
         console.log(events);
       }
     }, [ollamaResponse.data]);
@@ -273,13 +299,17 @@ export default function Assistant() {
         // // }
         
       } 
-      newString += "user: " + e.target.value + "\n"
-      let prompt = ""
-      // if (recentMessagesSize <= 1) {
-      prompt = ttInitialPrompt(newString, events);
-      // } else {
-      //   prompt = ttPrompt(newString, events);
-      // }
+      newString += "user: " + e.target.value + "\n";
+      //remove duplicate events based on planName
+      const preProcessEvents = structuredClone(events);
+      const seen = new Set();
+      const uniqueEvents = preProcessEvents.filter(event => {
+        const key = event.planName;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      let prompt = ttInitialPrompt(newString, uniqueEvents);
       
 
       setHistoryString(prompt);
