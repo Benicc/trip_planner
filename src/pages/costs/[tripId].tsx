@@ -39,6 +39,30 @@ export default function Cost() {
     const [toggleRevert, setToggleRevert] = useState(false);
     const [toggleApply, setToggleApply] = useState(false);
 
+    const incrementActionMutation = api.action.increment.useMutation(
+        {
+        onSuccess: () => {
+            console.log("Incremended action count");
+        },
+        }
+    );
+    
+    const incrementCostActionMutation = api.action.incrementCost.useMutation(
+        {
+        onSuccess: () => {
+            console.log("Incremended action count");
+        },
+        }
+    );
+    const action = () => {incrementActionMutation.mutateAsync({tripId: tripId as string, type: "GUI"})};
+    const actionCost = () => {incrementCostActionMutation.mutateAsync({tripId: tripId as string, type: "GUI"})};
+    
+    const editExpenseMutation = api.cost.updateExpense.useMutation({
+        onSuccess: () => {
+            getPeople.refetch();
+        },
+    });
+
     const deleteExpense = api.cost.deleteExpense.useMutation({
         onSuccess: () => {
             getExpenses.refetch();
@@ -54,6 +78,55 @@ export default function Cost() {
     
         return () => clearInterval(interval);
     }, []);
+    
+    //remove people from sharedWith if they are not in currentPeople
+    useEffect(() => {
+    const execute = async () => {
+        if (getPeople.data && getExpenses.data) {
+            const existingPpl = getPeople.data.map((person: any) => person.personId);
+
+            await Promise.all(
+                getExpenses.data.map((expense: any) => {
+                    if (expense.sharedWith.length === 0) {
+                        deleteExpense.mutate({expenseId: expense.id});
+                        action();
+                        actionCost();
+                        return;
+                    }
+
+                    //check if expense needs to be updated
+                    if (expense.sharedWith.every((shared: any) => existingPpl.includes(shared.personId))) {
+                        return;
+                    }
+                    //if not, update it and the productivity counter
+                    action();
+                    action();
+                    actionCost();
+                    actionCost();
+
+                    let newSharedWith = expense.sharedWith.filter((shared: any) =>
+                        existingPpl.includes(shared.personId)
+                    )
+                    const splitAmount = Number((expense.amount / newSharedWith.length).toFixed(2))
+                    newSharedWith = newSharedWith.map((shared: any) => ({
+                        personId: shared.personId,
+                        amount: splitAmount,
+                    }));
+                    editExpenseMutation.mutateAsync({
+                        id: expense.id,
+                        description: expense.description,
+                        amount: expense.amount,
+                        paidBy: expense.paidBy,
+                        sharedWith: newSharedWith,
+                    })
+                })
+            );
+        }
+    };
+
+    execute();
+    }, [getExpenses.data, getPeople.data]);
+
 
     const calculateExpenses = (personId: string) => {
         let paidByName = people.find(person => person.personId === personId);
