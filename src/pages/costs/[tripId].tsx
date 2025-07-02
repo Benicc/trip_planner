@@ -79,7 +79,7 @@ export default function Cost() {
         return () => clearInterval(interval);
     }, []);
     
-    //remove people from sharedWith if they are not in currentPeople
+    //Update expenses when people are updated
     useEffect(() => {
     const execute = async () => {
         if (getPeople.data && getExpenses.data) {
