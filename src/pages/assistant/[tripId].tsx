@@ -95,7 +95,7 @@ export default function Assistant() {
     const [newMessage, setNewMessage] = useState("");
     const [historyString, setHistoryString] = useState(""); //
     const [changed, setChanged] = useState(false);
-    const ollamaResponse = api.deepseek.getResponse.useQuery(historyString, {enabled:false,});
+    const ollamaResponse = api.chatGPT.getResponse.useQuery(historyString, {enabled:false,});
 
     const assistantData = api.database.getAssistantData.useQuery(String(tripId));
     const timetableData = api.database.getPlans.useQuery(String(tripId));

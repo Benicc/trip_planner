@@ -8,6 +8,7 @@ import "~/utils/productivityTimer";
 import { costRouter } from "./routers/costs";
 import CostAssistant from "~/components/costAssistant";
 import { costAssistantRouter } from "./routers/costAssistant";
+import GPTRouter from "./routers/chatgpt";
 
 /**
  * This is the primary router for your server.
@@ -22,6 +23,7 @@ export const appRouter = createTRPCRouter({
   action: actionRouter,
   cost: costRouter,
   costAssistant: costAssistantRouter,
+  chatGPT: GPTRouter,
 });
 
 // export type definition of API

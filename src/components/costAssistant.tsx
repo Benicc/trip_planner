@@ -106,7 +106,7 @@ const CostAssistant: React.FC<CostAssistantProps> = ({ setPeople, setExpenses,
     const [historyString, setHistoryString] = useState(""); //
     const [changed, setChanged] = useState(false); //
     const [inputValue, setInputValue] = useState('');
-    const ollamaResponse = api.deepseek.getResponse.useQuery(historyString, {enabled:false,});
+    const ollamaResponse = api.chatGPT.getResponse.useQuery(historyString, {enabled:false,});
     const updateAssistant = api.costAssistant.updateAssistant.useMutation();
 
     const setActionMutation = api.action.set.useMutation(
