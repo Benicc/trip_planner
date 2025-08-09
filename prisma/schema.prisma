@@ -28,14 +28,14 @@ model account {
 }
 
 model action {
-  actionId String   @unique(map: "Action_actionId_key")
-  tripId   String
-  type     String
-  dateTime DateTime
-  count    Int
+  actionId       String   @unique(map: "Action_actionId_key")
+  tripId         String
+  type           String
+  dateTime       DateTime
+  count          Int
   timetableCount Int
-  costCount Int
-  trip     trip     @relation(fields: [tripId], references: [tripId], onDelete: Cascade, map: "Action_tripId_fkey")
+  costCount      Int
+  trip           trip     @relation(fields: [tripId], references: [tripId], onDelete: Cascade, map: "Action_tripId_fkey")
 
   @@index([tripId], map: "Action_tripId_fkey")
 }
@@ -118,6 +118,7 @@ model trip {
   costChanged         Boolean   @default(false)
   action              action[]
   expense             expense[]
+  marker              marker[]
   person              person[]
   plan                plan[]
 }
@@ -131,6 +132,17 @@ model user {
   account       account[]
   post          post[]
   session       session[]
+}
+
+model marker {
+  id     String  @id @default(cuid())
+  tripId String
+  lat    Float
+  lng    Float
+  label  String?
+  trip   trip    @relation(fields: [tripId], references: [tripId], onDelete: Cascade, map: "Marker_tripId_fkey")
+
+  @@index([tripId], map: "Marker_tripId_fkey")
 }
 
 model verificationtoken {
